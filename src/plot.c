@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
   /* print the graph with labels */
   for (i=height-1;i>=0;i--) {
-    printf(label_format, labels[i], &chars[4]);
+    printf(label_format, labels[i], i == larr[0] ? &chars[4] : &chars[0]);
     for (j=0;j<arrlen;j++) {
       fputs(graph[j] + (i * 4), stdout);
     }
