@@ -11,6 +11,12 @@ double *make_arr(int argc, char **argv) {
 
 void print_help() {
   printf("usage: plot [OPTS] [point[ point [ ...]]]\n");
+  printf("OPTS\n");
+  printf("-H HEIGHT - set total plot height to HEIGHT\n");
+  printf("   (default:  16)\n");
+  printf("-f STRING - set y-axis label format string to STRING\n");
+  printf("   (default:  \"%%11.2f %%s\")\n");
+  printf("-h - duh...\n");
 }
 
 int main(int argc, char **argv) {
