@@ -10,6 +10,10 @@ ifeq (debug,$(MAKECMDGOALS))
   target := debug
   MAKECMDGOALS := all
 endif
+ifeq (lib,$(MAKECMDGOALS))
+  target := lib
+  MAKECMDGOALS := all
+endif
 
 target ?= release
 TARGET ?= $(target)
@@ -19,10 +23,20 @@ objects := \
 
 debug_cflags := -g -D DEBUG
 release_cflags := -O2
+lib_cflags := -O2 -fPIC
 CFLAGS += $($(TARGET)_cflags)
 
 .PHONY: all debug release
 all debug release: $(target_dir)/$(executable)
+
+.PHONY: lib
+lib: $(target_dir)/plot.o
+	$(CC) $(target_dir)/plot.o -shared -o $(target_dir)/libplot.so
+
+ruby: all
+	cp target/release/plot.o ext/
+	cd ext/
+	make
 
 $(target_dir):
 	mkdir -p $(target_dir)
