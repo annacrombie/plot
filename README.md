@@ -35,6 +35,8 @@ You might want to put the executable somewhere in your `$PATH`, e.g.
 $ cp target/release/plot /usr/local/bin/plot
 ```
 
+You can also make a ruby extension with `make ruby`.
+
 # Usage
 
 ```
