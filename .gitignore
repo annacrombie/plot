@@ -1,1 +1,5 @@
 target/
+ext/extconf.h
+ext/Makefile
+*.log
+*.so
