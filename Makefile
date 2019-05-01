@@ -34,9 +34,10 @@ lib: $(target_dir)/plot.o
 	$(CC) $(target_dir)/plot.o -shared -o $(target_dir)/libplot.so
 
 ruby: all
+	cp src/plot.h ext/
 	cp target/release/plot.o ext/
-	cd ext/
-	make
+	cd ext/ && ruby extconf.rb
+	make -C ext/
 
 $(target_dir):
 	mkdir -p $(target_dir)
