@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
   arr = make_arr(arrlen, &argv[i]);
 
   plot(height, label_format, arrlen, arr);
+  free(arr);
 
   return 0;
 }

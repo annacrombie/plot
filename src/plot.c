@@ -71,11 +71,9 @@ void plot(int height, const char *label_format, int arrlen, double *arr) {
   }
 
   /* free everything */
-  free(arr);
   free(larr);
   free(labels);
   for (i=0; i<arrlen; i++) { free(graph[i]); }
   free(graph);
-
 }
 
