@@ -5,14 +5,23 @@
 
 #define MODNAME "AsciiPlot"
 
-VALUE rb_plot(int argc, VALUE* argv, VALUE self)
+VALUE rb_plot(size_t argc, VALUE* argv, VALUE self)
 {
-  VALUE arr;
-  VALUE opts;
+  VALUE arr, opts, oval;
   double *darr;
-  long ary_len;
+  size_t ary_len;
+  long height = 16;
+  const char *fmt = "%11.2f %s";
 
   rb_scan_args(argc, argv, "*:", &arr, &opts);
+
+  if (opts != Qnil) {
+    oval = rb_hash_lookup(opts, ID2SYM(rb_intern("height")));
+    if (oval != Qnil) height = NUM2LONG(oval);
+
+    oval = rb_hash_lookup(opts, ID2SYM(rb_intern("fmt")));
+    if (oval != Qnil) fmt = StringValueCStr(oval);
+  }
 
   ary_len = rb_array_len(arr);
 
@@ -24,7 +33,7 @@ VALUE rb_plot(int argc, VALUE* argv, VALUE self)
     darr[argc] = NUM2DBL(rb_ary_shift(arr));
   }
 
-  plot(16, "%11.2f %s", (int)ary_len, darr);
+  plot(height, fmt, (int)ary_len, darr);
   free(darr);
 
   return Qnil;
