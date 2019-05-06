@@ -35,15 +35,15 @@ You might want to put the executable somewhere in your `$PATH`, e.g.
 $ cp target/release/plot /usr/local/bin/plot
 ```
 
-You can also make a ruby extension with `make ruby`.
-
 # Usage
 
 ```
-plot [OPTS] [point[ point [ ...]]]
+plot [OPTS] -|point[ point [ ...]]
 ```
 
 Points are parsed as doubles using strtod(3)
+
+If - is given instead of a list of points, points will be read from stdin.
 
 ## OPTS
 
@@ -54,6 +54,19 @@ Points are parsed as doubles using strtod(3)
   `"%11.2f %s"`.  One double and one string are passed to the call to printf(1),
   the double is the y value and the string is the box drawing character.
   WARNING, if you pass an invalid format string, the program will segfault.
+
+# Ruby Exension
+
+To build the extension, run `make ruby`.
+
+Requiring the resulting `asciiplot.so` will give you a module `AsciiPlot` with
+one singleton method defined on it `plot(*points, height: 16, fmt: nil)`
+
+Example:
+
+```
+ruby -r ./asciiplot -e 'AsciiPlot.plot(*125.times.map { |i| Math.sin(i.fdiv(0.5))*100 })'
+```
 
 # Credits
 
