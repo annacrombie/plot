@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   int height = 16;
   char *label_format = "%11.2f %s";
   /* Parse options */
-  char *opts[] = { "-h", "-H", "-f" };
+  char *opts[] = { "-h", "-H", "-f", "-v" };
   for (;i<argc;i++) {
     if (strcmp(argv[i], opts[0]) == 0) {
       print_help();
@@ -104,7 +104,9 @@ int main(int argc, char **argv) {
         printf("error: %s requires a value\n", opts[1]);
         return 1;
       }
-
+    } else if (strcmp(argv[i], opts[3]) == 0) {
+      printf("plot v%s\n", PLOT_VERSION);
+      return 0;
     } else {
       break;
     }
