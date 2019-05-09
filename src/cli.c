@@ -85,15 +85,15 @@ int main(int argc, char **argv) {
       print_help();
       return 0;
     } else if (strcmp(argv[i], opts[1]) == 0) {
-      if (argc >= i + 1) {
+      if (argc > i + 1) {
         height = atoi(argv[i+1]);
         if (height < 1) {
-          printf("error: height must be >= 1\n");
+          fprintf(stderr, "error: height must be >= 1\n");
           return 1;
         }
         i++;
       } else {
-        printf("error: %s requires a value\n", opts[1]);
+        fprintf(stderr, "error: %s requires a value\n", opts[1]);
         return 1;
       }
     } else if (strcmp(argv[i], opts[2]) == 0) {
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
         label_format = argv[i+1];
         i++;
       } else {
-        printf("error: %s requires a value\n", opts[1]);
+        fprintf(stderr, "error: %s requires a value\n", opts[1]);
         return 1;
       }
     } else if (strcmp(argv[i], opts[3]) == 0) {
