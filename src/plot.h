@@ -1,7 +1,7 @@
 #ifndef PLOT_H__
 
 #define PLOT_H__
-#define PLOT_VERSION "0.1.0"
+#define PLOT_VERSION "0.1.1"
 
 #include <stdlib.h>
 #include <stdio.h>
