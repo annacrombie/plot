@@ -1,6 +1,8 @@
 #include "plot.h"
 
-struct plot_format *init_plot_format(char *str) {
+static char *default_format = "%11.2f %s";
+
+struct plot_format *init_plot_format() {
   struct plot_format *format;
   format = malloc(sizeof(struct plot_format));
 
@@ -11,12 +13,18 @@ struct plot_format *init_plot_format(char *str) {
 
   format->height = 16;
   format->color = 0;
-  format->label_format = str;
+  format->label_format = default_format;
 
   return format;
 }
 
-void plot(int arrlen, double *arr, struct plot_format *pf) {
+void plot(int arrlen, double *arr) {
+  struct plot_format *pf = init_plot_format();
+  plotf(arrlen, arr, pf);
+  free(pf);
+}
+
+void plotf(int arrlen, double *arr, struct plot_format *pf) {
   /* Determine the max and min of the array*/
   int i;
   double max = -1e308;

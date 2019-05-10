@@ -76,7 +76,7 @@ void print_help() {
 
 int main(int argc, char **argv) {
   int i = 1;
-  struct plot_format *pf = init_plot_format("%11.2f %s");
+  struct plot_format *pf = init_plot_format();
   /* Parse options */
   char *opts[] = { "-h", "-H", "-f", "-v", "-c" };
   for (;i<argc;i++) {
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
     arr = make_arr(arrlen, &argv[i]);
   }
 
-  plot(arrlen, arr, pf);
+  plotf(arrlen, arr, pf);
   free(arr);
   free(pf);
 

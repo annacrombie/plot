@@ -14,6 +14,7 @@ struct plot_format {
   char *label_format;
 };
 
-struct plot_format *init_plot_format(char *);
-void plot(int , double *, struct plot_format *);
+struct plot_format *init_plot_format();
+void plot(int, double *);
+void plotf(int , double *, struct plot_format *);
 #endif
