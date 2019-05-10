@@ -8,6 +8,12 @@
 #include <string.h>
 #include <math.h>
 
-void plot(int, const char *, int , double *);
+struct plot_format {
+  int height;
+  int color;
+  char *label_format;
+};
 
+struct plot_format *init_plot_format(char *);
+void plot(int , double *, struct plot_format *);
 #endif

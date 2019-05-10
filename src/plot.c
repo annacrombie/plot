@@ -1,6 +1,22 @@
 #include "plot.h"
 
-void plot(int height, const char *label_format, int arrlen, double *arr) {
+struct plot_format *init_plot_format(char *str) {
+  struct plot_format *format;
+  format = malloc(sizeof(struct plot_format));
+
+  if (format == NULL) {
+    fprintf(stderr, "out of memory\n");
+    exit(1);
+  }
+
+  format->height = 16;
+  format->color = 0;
+  format->label_format = str;
+
+  return format;
+}
+
+void plot(int arrlen, double *arr, struct plot_format *pf) {
   /* Determine the max and min of the array*/
   int i;
   double max = -1e308;
@@ -16,10 +32,10 @@ void plot(int height, const char *label_format, int arrlen, double *arr) {
   }
 
   /* Create the labels for the graph */
-  double *labels = calloc(height, sizeof(double));
-  double inc = (max - min) / (double)(height - 1);
+  double *labels = calloc(pf->height, sizeof(double));
+  double inc = (max - min) / (double)(pf->height - 1);
   double s =  min;
-  for (i=0;i<height;i++) {
+  for (i=0;i<pf->height;i++) {
     labels[i] = s;
     s += inc;
   }
@@ -27,7 +43,7 @@ void plot(int height, const char *label_format, int arrlen, double *arr) {
   /* normalize the values from 0 to height and place the results in a new array */
   long *larr = calloc(arrlen + 1, sizeof(long));
   for (i=0;i<arrlen;i++) {
-    larr[i] = lround((arr[i] - min) * (double)(height - 1) / (max - min));
+    larr[i] = lround((arr[i] - min) * (double)(pf->height - 1) / (max - min));
   }
   larr[arrlen] = larr[arrlen-1];
 
@@ -39,8 +55,8 @@ void plot(int height, const char *label_format, int arrlen, double *arr) {
   char **graph = calloc(arrlen, sizeof(char *));
   size_t index;
   for (i=0;i<arrlen;i++) {
-    graph[i] = calloc(height, 4*sizeof(char));
-    for (j=0;j<height;j++) {
+    graph[i] = calloc(pf->height, 4*sizeof(char));
+    for (j=0;j<pf->height;j++) {
       if (j == larr[i]) {
         index =
           larr[i + 1] > larr[i] ? 28
@@ -62,13 +78,22 @@ void plot(int height, const char *label_format, int arrlen, double *arr) {
   }
 
   /* print the graph with labels */
-  for (i=height-1;i>=0;i--) {
-    printf(label_format, labels[i], i == larr[0] ? &chars[4] : &chars[0]);
+  for (i=pf->height-1;i>=0;i--) {
+    if (pf->color != 0) {
+      if (i == larr[0]) printf("\e[%dm", pf->color);
+      else printf("\e[0m");
+    }
+
+    printf(pf->label_format, labels[i], i == larr[0] ? &chars[4] : &chars[0]);
     for (j=0;j<arrlen;j++) {
+      if (pf->color != 0) printf("\e[%dm", pf->color);
       fputs(graph[j] + (i * 4), stdout);
     }
+    if (pf->color) fputs("\e[K", stdout);
     fputs("\n", stdout);
   }
+
+  if (pf->color) fputs("\e[0m", stdout);
 
   /* free everything */
   free(larr);

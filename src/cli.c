@@ -76,37 +76,55 @@ void print_help() {
 
 int main(int argc, char **argv) {
   int i = 1;
-  int height = 16;
-  char *label_format = "%11.2f %s";
+  struct plot_format *pf = init_plot_format("%11.2f %s");
   /* Parse options */
-  char *opts[] = { "-h", "-H", "-f", "-v" };
+  char *opts[] = { "-h", "-H", "-f", "-v", "-c" };
   for (;i<argc;i++) {
     if (strcmp(argv[i], opts[0]) == 0) {
       print_help();
+      free(pf);
       return 0;
     } else if (strcmp(argv[i], opts[1]) == 0) {
       if (argc > i + 1) {
-        height = atoi(argv[i+1]);
-        if (height < 1) {
+        pf->height = atoi(argv[i+1]);
+        if (pf->height < 1) {
           fprintf(stderr, "error: height must be >= 1\n");
+          free(pf);
           return 1;
         }
         i++;
       } else {
         fprintf(stderr, "error: %s requires a value\n", opts[1]);
+        free(pf);
         return 1;
       }
     } else if (strcmp(argv[i], opts[2]) == 0) {
       if (argc >= i + 1) {
-        label_format = argv[i+1];
+        pf->label_format = argv[i+1];
         i++;
       } else {
-        fprintf(stderr, "error: %s requires a value\n", opts[1]);
+        fprintf(stderr, "error: %s requires a value\n", opts[2]);
+        free(pf);
         return 1;
       }
     } else if (strcmp(argv[i], opts[3]) == 0) {
       printf("plot v%s\n", PLOT_VERSION);
+      free(pf);
       return 0;
+    } else if (strcmp(argv[i], opts[4]) == 0) {
+      if (argc > i + 1) {
+        pf->color = atoi(argv[i+1]);
+        if (pf->height < 1) {
+          fprintf(stderr, "error: color must be >= 1\n");
+          free(pf);
+          return 1;
+        }
+        i++;
+      } else {
+        fprintf(stderr, "error: %s requires a value\n", opts[3]);
+        free(pf);
+        return 1;
+      }
     } else {
       break;
     }
@@ -115,7 +133,7 @@ int main(int argc, char **argv) {
   /* Get the array from the rest of the options */
   size_t arrlen = argc - i;
   double *arr;
-  if (arrlen < 1) { print_help(); return 1; }
+  if (arrlen < 1) { print_help(); free(pf); return 1; }
 
   if (strcmp(argv[i], "-") == 0) {
     arrlen = read_arr(&arr);
@@ -124,8 +142,9 @@ int main(int argc, char **argv) {
     arr = make_arr(arrlen, &argv[i]);
   }
 
-  plot(height, label_format, arrlen, arr);
+  plot(arrlen, arr, pf);
   free(arr);
+  free(pf);
 
   return 0;
 }
