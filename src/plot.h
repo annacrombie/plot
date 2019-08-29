@@ -9,12 +9,12 @@
 #include <math.h>
 
 struct plot_format {
-  int height;
-  int color;
-  char *label_format;
+	int height;
+	int color;
+	char *label_format;
 };
 
 struct plot_format *init_plot_format();
 void plot(int, double *);
-void plotf(int , double *, struct plot_format *);
+void plotf(int, double *, struct plot_format *);
 #endif
