@@ -1,123 +1,209 @@
 #include "plot.h"
+#include "float.h"
+#define LOG(...) printf("%s:%d [\e[35m%s\e[0m] ", __FILE__, __LINE__, __func__); printf(__VA_ARGS__);
 
-static char *default_format = "%11.2f %s";
-
-struct plot_format *init_plot_format()
+struct plot *plot_init()
 {
-	struct plot_format *format;
+	struct plot *plot;
 
-	format = malloc(sizeof(struct plot_format));
+	plot = malloc(sizeof(struct plot));
 
-	if (format == NULL) {
-		fprintf(stderr, "out of memory\n");
-		exit(1);
-	}
+	plot->data = NULL;
+	plot->height = 24;
+	plot->width = 80;
+	plot->orientation = Horizontal;
+	plot->datasets = 0;
 
-	format->height = 16;
-	format->color = 0;
-	format->label_format = default_format;
-
-	return format;
+	return plot;
 }
 
-void plot(int arrlen, double *arr)
+static struct plot_data *plot_data_init(size_t len, double *data)
 {
-	struct plot_format *pf = init_plot_format();
+	struct plot_data *pd;
 
-	plotf(arrlen, arr, pf);
-	free(pf);
+	pd = malloc(sizeof(struct plot_data));
+
+	pd->len = len;
+	pd->data = data;
+	pd->next = NULL;
+
+	return pd;
 }
 
-void plotf(int arrlen, double *arr, struct plot_format *pf)
+void plot_add(struct plot *plot, size_t len, double *data)
 {
-	/* Determine the max and min of the array*/
-	int i;
-	double max = -1e308;
-	double min = 1e308;
+	struct plot_data **d = &plot->data;
 
-	for (i = 0; i < arrlen; i++) {
-		if (arr[i] > max)
-			max = arr[i];
-		if (arr[i] < min)
-			min = arr[i];
+	while (*d != NULL)
+		*d = (*d)->next;
+
+	*d = plot_data_init(len, data);
+
+	plot->datasets++;
+}
+
+static struct plot_bounds *plot_data_get_bounds(struct plot_data *data)
+{
+	size_t i;
+	struct plot_bounds *bounds;
+
+	bounds = malloc(sizeof(struct plot_bounds));
+
+	bounds->max = DBL_MIN;
+	bounds->min = DBL_MAX;
+
+	while (data != NULL) {
+		for (i = 0; i < data->len; i++) {
+			if (data->data[i] > bounds->max)
+				bounds->max = data->data[i];
+			if (data->data[i] < bounds->min)
+				bounds->min = data->data[i];
+		}
+
+		data = data->next;
 	}
 
-	if (max == min) {
-		max += 7.5;
-		min -= 7.5;
-	}
+	LOG("data bounds: %lf..%lf\n", bounds->min, bounds->max);
 
-	/* Create the labels for the graph */
-	double *labels = calloc(pf->height, sizeof(double));
-	double inc = (max - min) / (double)(pf->height - 1);
-	double s =  min;
-	for (i = 0; i < pf->height; i++) {
+	return bounds;
+}
+
+static double *plot_make_labels(unsigned int height, struct plot_bounds *pb)
+{
+	unsigned int i;
+	double *labels = calloc(height, sizeof(double));
+	double inc = (pb->max - pb->min) / (double)(height - 1);
+	double s =  pb->min;
+
+	for (i = 0; i < height; i++) {
 		labels[i] = s;
 		s += inc;
 	}
 
-	/* normalize the values from 0 to height and place the results in a new array */
-	long *larr = calloc(arrlen + 1, sizeof(long));
-	for (i = 0; i < arrlen; i++)
-		larr[i] = lround((arr[i] - min) * (double)(pf->height - 1) / (max - min));
-	larr[arrlen] = larr[arrlen - 1];
+	return labels;
+}
 
-	/* create the graph */
-	int j;
-	char *chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
-	//             0  4  8  12 16 20 24 28 32
-	//             byte index
-	char **graph = calloc(arrlen, sizeof(char *));
-	size_t index;
-	for (i = 0; i < arrlen; i++) {
-		graph[i] = calloc(pf->height, 4 * sizeof(char));
-		for (j = 0; j < pf->height; j++) {
-			if (j == larr[i]) {
-				index =
-					larr[i + 1] > larr[i] ? 28
-					: larr[i + 1] < larr[i] ? 24
-					: 8;
-			} else if (j == larr[i + 1]) {
-				index =
-					larr[i + 1] > larr[i] ? 20
-					: larr[i + 1] < larr[i] ? 16
-					: 8;
-			} else if ((j > larr[i] && j < larr[i + 1]) || (j < larr[i] && j > larr[i + 1])) {
-				index = 12;
-			} else {
-				index = 32;
-			}
+static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
+{
+	size_t i, j;
+	long **normalized;
 
-			memcpy(graph[i] + (j * 4), &chars[index], 4);
-		}
+	double ratio = (double)(p->height - 1) / (b->max - b->min);
+
+	struct plot_data *d = p->data;
+
+	normalized = calloc(p->datasets, sizeof(long *));
+
+	j = 0;
+	while (d != NULL) {
+		normalized[j] = calloc(d->len + 1, sizeof(long));
+
+		normalized[j][0] = d->len;
+		for (i = 1; i <= d->len; i++)
+			normalized[j][i] = lround((d->data[i - 1] - b->min) * ratio);
+
+		d = d->next;
+		j++;
 	}
 
-	/* print the graph with labels */
-	for (i = pf->height - 1; i >= 0; i--) {
-		if (pf->color != 0) {
-			if (i == larr[0])
-				printf("\e[%dm", pf->color);
-			else
-				printf("\e[0m");
-		}
+	return normalized;
 
-		printf(pf->label_format, labels[i], i == larr[0] ? &chars[4] : &chars[0]);
-		for (j = 0; j < arrlen; j++) {
-			if (pf->color != 0)
-				printf("\e[%dm", pf->color);
-			fputs(graph[j] + (i * 4), stdout);
+}
+
+static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
+//                         0  4  8  12 16 20 24 28 32
+enum plot_peice {
+	PPBarrier,
+	PPCross,
+	PPRight,
+	PPVert,
+	PPDownRight,
+	PPUpRight,
+	PPRightDown,
+	PPRightUp,
+	PPBlank
+};
+
+static enum plot_peice plot_plot_peice(long y, long cur, long next)
+{
+	enum plot_peice i;
+
+	if (y == cur)
+		i = next > cur ? PPRightUp : next < cur ? PPRightDown : PPRight;
+	else if (y == next)
+		i = next > cur ? PPUpRight : next < cur ? PPDownRight : PPRight;
+	else if ((y > cur && y < next) || (y < cur && y > next))
+		i = PPVert;
+	else
+		i = PPBlank;
+
+	return i;
+}
+
+static void plot_write_norm(struct plot *plot, long *norm, char **canvas)
+{
+	enum plot_peice peice;
+	size_t x, y;
+
+	for (x = 1; x < norm[0] && x < plot->width; x++) {
+		for (y = 0; y < plot->height; y++) {
+			peice = plot_plot_peice(y, norm[x], norm[x + 1]);
+			if (peice != PPBlank)
+				memcpy(canvas[x] + (y * 4), &plot_chars[peice * 4], 4);
 		}
-		if (pf->color)
-			fputs("\e[K", stdout);
+	}
+}
+
+static char **plot_fill_canvas(struct plot *plot, long **norm)
+{
+	size_t x, y, i;
+	char **canvas = calloc(plot->width, sizeof(char *));
+
+	for (x = 0; x < plot->width; x++) {
+		canvas[x] = calloc(plot->height, 4 * sizeof(char));
+		for (y = 0; y < plot->height; y++)
+			memcpy(canvas[x] + (y * 4), &plot_chars[PPBlank * 4], 4);
+	}
+
+	for (i = 0; i < plot->datasets; i++)
+		plot_write_norm(plot, norm[i], canvas);
+
+	return canvas;
+}
+
+static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
+{
+	long x, y;
+
+	//for (y = plot->height - 1; y >= 0; y--) {
+	for (y = plot->height - 1; y >= 0; y--) {
+		printf("%11.2f %s", labels[y], &plot_chars[0]);
+
+		for (x = 0; x < plot->width; x++)
+			fputs(canvas[x] + (y * 4), stdout);
+
 		fputs("\n", stdout);
 	}
 
-	if (pf->color)
-		fputs("\e[0m", stdout);
+}
+
+void plot_plot(struct plot *plot)
+{
+	/* Determine the max and min of the array*/
+	struct plot_bounds *bounds = plot_data_get_bounds(plot->data);
+
+	/* Create the labels for the graph */
+	double *labels = plot_make_labels(plot->height, bounds);
+
+	/* normalize the values from 0 to height and place the results in a new array */
+	long **normalized = plot_normalize_data(plot, bounds);
+
+	/* create the graph */
+	char **canvas = plot_fill_canvas(plot, normalized);
+
+	/* print the graph with labels */
+	plot_print_canvas(plot, labels, canvas);
 
 	/* free everything */
-	free(larr);
-	free(labels);
-	for (i = 0; i < arrlen; i++) free(graph[i]); free(graph);
 }
 

@@ -82,56 +82,33 @@ void print_help()
 int main(int argc, char **argv)
 {
 	int i = 1;
-	struct plot_format *pf = init_plot_format();
+	struct plot *p = plot_init();
 	/* Parse options */
 	char *opts[] = { "-h", "-H", "-f", "-v", "-c" };
 
 	for (; i < argc; i++) {
 		if (strcmp(argv[i], opts[0]) == 0) {
 			print_help();
-			free(pf);
+			free(p);
 			return 0;
 		} else if (strcmp(argv[i], opts[1]) == 0) {
 			if (argc > i + 1) {
-				pf->height = atoi(argv[i + 1]);
-				if (pf->height < 1) {
+				p->height = atoi(argv[i + 1]);
+				if (p->height < 1) {
 					fprintf(stderr, "error: height must be >= 1\n");
-					free(pf);
+					free(p);
 					return 1;
 				}
 				i++;
 			} else {
 				fprintf(stderr, "error: %s requires a value\n", opts[1]);
-				free(pf);
-				return 1;
-			}
-		} else if (strcmp(argv[i], opts[2]) == 0) {
-			if (argc >= i + 1) {
-				pf->label_format = argv[i + 1];
-				i++;
-			} else {
-				fprintf(stderr, "error: %s requires a value\n", opts[2]);
-				free(pf);
+				free(p);
 				return 1;
 			}
 		} else if (strcmp(argv[i], opts[3]) == 0) {
 			printf("plot v%s\n", PLOT_VERSION);
-			free(pf);
+			free(p);
 			return 0;
-		} else if (strcmp(argv[i], opts[4]) == 0) {
-			if (argc > i + 1) {
-				pf->color = atoi(argv[i + 1]);
-				if (pf->height < 1) {
-					fprintf(stderr, "error: color must be >= 1\n");
-					free(pf);
-					return 1;
-				}
-				i++;
-			} else {
-				fprintf(stderr, "error: %s requires a value\n", opts[3]);
-				free(pf);
-				return 1;
-			}
 		} else {
 			break;
 		}
@@ -141,7 +118,7 @@ int main(int argc, char **argv)
 	size_t arrlen = argc - i;
 	double *arr;
 	if (arrlen < 1) {
-		print_help(); free(pf); return 1;
+		print_help(); free(p); return 1;
 	}
 
 	if (strcmp(argv[i], "-") == 0) {
@@ -152,9 +129,8 @@ int main(int argc, char **argv)
 		arr = make_arr(arrlen, &argv[i]);
 	}
 
-	plotf(arrlen, arr, pf);
-	free(arr);
-	free(pf);
+	plot_add(p, arrlen, arr);
+	plot_plot(p);
 
 	return 0;
 }
