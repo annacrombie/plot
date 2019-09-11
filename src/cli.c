@@ -51,20 +51,6 @@ size_t read_arr(double **arr)
 	}
 }
 
-double *make_arr(int argc, char **argv)
-{
-	double *arr = calloc(argc, sizeof(double));
-
-	if (NULL == arr) {
-		fprintf(stderr, "out of memory\n");
-		exit(1);
-	}
-	for (int i = 0; i < argc; i++)
-		arr[i] = strtod(argv[i], NULL);
-
-	return arr;
-}
-
 void print_help()
 {
 	printf(
@@ -82,6 +68,9 @@ void print_help()
 int main(int argc, char **argv)
 {
 	int i = 1;
+	size_t arrlen;
+	double *arr;
+
 	struct plot *p = plot_init();
 	/* Parse options */
 	char *opts[] = { "-h", "-H", "-f", "-v", "-c" };
@@ -115,19 +104,9 @@ int main(int argc, char **argv)
 	}
 
 	/* Get the array from the rest of the options */
-	size_t arrlen = argc - i;
-	double *arr;
-	if (arrlen < 1) {
-		print_help(); free(p); return 1;
-	}
-
-	if (strcmp(argv[i], "-") == 0) {
-		arrlen = read_arr(&arr);
-		if (arrlen < 1)
-			return 0;
-	} else {
-		arr = make_arr(arrlen, &argv[i]);
-	}
+	arrlen = read_arr(&arr);
+	if (arrlen < 1)
+		return 0;
 
 	plot_add(p, arrlen, arr);
 	plot_plot(p);
