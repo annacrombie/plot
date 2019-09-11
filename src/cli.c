@@ -131,6 +131,9 @@ int main(int argc, char **argv)
 
 	plot_add(p, arrlen, arr);
 	plot_plot(p);
+	plot_destroy(p);
+
+	free(arr);
 
 	return 0;
 }

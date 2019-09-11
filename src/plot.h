@@ -1,12 +1,12 @@
 #ifndef PLOT_H__
 
 #define PLOT_H__
-#define PLOT_VERSION "0.1.1"
-
+#define PLOT_VERSION "0.2.0"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "float.h"
 
 struct plot_data {
 	double *data;
@@ -34,6 +34,6 @@ struct plot_bounds {
 
 struct plot *plot_init();
 void plot_add(struct plot *plot, size_t len, double *data);
-void plot_plot(struct plot *graph);
+void plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot);
 #endif

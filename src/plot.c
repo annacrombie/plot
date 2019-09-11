@@ -1,6 +1,24 @@
 #include "plot.h"
-#include "float.h"
 #define LOG(...) printf("%s:%d [\e[35m%s\e[0m] ", __FILE__, __LINE__, __func__); printf(__VA_ARGS__);
+
+static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
+//                         0  4  8  12 16 20 24 28 32
+enum plot_peice {
+	PPBarrier,
+	PPCross,
+	PPRight,
+	PPVert,
+	PPDownRight,
+	PPUpRight,
+	PPRightDown,
+	PPRightUp,
+	PPBlank
+};
+
+static char *plot_peice_c(enum plot_peice p)
+{
+	return &plot_chars[p * 4];
+}
 
 struct plot *plot_init()
 {
@@ -110,20 +128,6 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 }
 
-static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
-//                         0  4  8  12 16 20 24 28 32
-enum plot_peice {
-	PPBarrier,
-	PPCross,
-	PPRight,
-	PPVert,
-	PPDownRight,
-	PPUpRight,
-	PPRightDown,
-	PPRightUp,
-	PPBlank
-};
-
 static enum plot_peice plot_plot_peice(long y, long cur, long next)
 {
 	enum plot_peice i;
@@ -149,7 +153,7 @@ static void plot_write_norm(struct plot *plot, long *norm, char **canvas)
 		for (y = 0; y < plot->height; y++) {
 			peice = plot_plot_peice(y, norm[x], norm[x + 1]);
 			if (peice != PPBlank)
-				memcpy(canvas[x] + (y * 4), &plot_chars[peice * 4], 4);
+				memcpy(canvas[x] + (y * 4), plot_peice_c(peice), 4);
 		}
 	}
 }
@@ -162,7 +166,7 @@ static char **plot_fill_canvas(struct plot *plot, long **norm)
 	for (x = 0; x < plot->width; x++) {
 		canvas[x] = calloc(plot->height, 4 * sizeof(char));
 		for (y = 0; y < plot->height; y++)
-			memcpy(canvas[x] + (y * 4), &plot_chars[PPBlank * 4], 4);
+			memcpy(canvas[x] + (y * 4), plot_peice_c(PPBlank), 4);
 	}
 
 	for (i = 0; i < plot->datasets; i++)
@@ -175,9 +179,8 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 {
 	long x, y;
 
-	//for (y = plot->height - 1; y >= 0; y--) {
 	for (y = plot->height - 1; y >= 0; y--) {
-		printf("%11.2f %s", labels[y], &plot_chars[0]);
+		printf("%11.2f %s", labels[y], plot_peice_c(PPBarrier));
 
 		for (x = 0; x < plot->width; x++)
 			fputs(canvas[x] + (y * 4), stdout);
@@ -189,13 +192,16 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 
 void plot_plot(struct plot *plot)
 {
+	size_t i;
+
 	/* Determine the max and min of the array*/
 	struct plot_bounds *bounds = plot_data_get_bounds(plot->data);
 
 	/* Create the labels for the graph */
 	double *labels = plot_make_labels(plot->height, bounds);
 
-	/* normalize the values from 0 to height and place the results in a new array */
+	/* normalize the values from 0 to height and place the results in a new
+	 * array */
 	long **normalized = plot_normalize_data(plot, bounds);
 
 	/* create the graph */
@@ -205,5 +211,27 @@ void plot_plot(struct plot *plot)
 	plot_print_canvas(plot, labels, canvas);
 
 	/* free everything */
+	free(bounds);
+	free(labels);
+	for (i = 0; i < plot->datasets; i++)
+		free(normalized[i]);
+	free(normalized);
+	for (i = 0; i < plot->width; i++)
+		free(canvas[i]);
+	free(canvas);
 }
 
+void plot_destroy(struct plot *plot)
+{
+	struct plot_data *d, *e;
+
+	d = plot->data;
+
+	while (d != NULL) {
+		e = d->next;
+		free(d);
+		d = e;
+	}
+
+	free(plot);
+}
