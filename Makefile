@@ -33,11 +33,6 @@ all debug release: $(target_dir)/$(executable)
 lib: $(target_dir)/plot.o
 	$(CC) $(target_dir)/plot.o -shared -o $(target_dir)/libplot.so
 
-ruby: release
-	cp target/release/plot.o ext/
-	cd ext/ && ruby extconf.rb
-	make -C ext/
-
 $(target_dir):
 	mkdir -p $(target_dir)
 
@@ -52,7 +47,6 @@ $(target_dir):
 .PHONY: clean
 clean:
 	rm -rf target
-	make -C ext clean
 
 .PHONY: run
 run: all
