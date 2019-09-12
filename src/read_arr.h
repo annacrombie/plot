@@ -4,5 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-size_t read_arr(double **arr);
+#include "util.h"
+size_t read_arr(FILE *f, double **arr, size_t maxlen);
 #endif

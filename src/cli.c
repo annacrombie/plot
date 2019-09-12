@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 
 	parse_opts(p, argc, argv);
 
-	arrlen = read_arr(&arr);
+	arrlen = read_arr(stdin, &arr, p->width);
 	if (arrlen < 1)
 		return 1;
 
