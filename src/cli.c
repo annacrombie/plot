@@ -2,6 +2,9 @@
 #include "read_arr.h"
 #include <getopt.h>
 
+#define MAXWIDTH 1000
+#define MAXHEIGHT 1000
+
 static void print_usage(FILE *f)
 {
 	fprintf(f,
@@ -41,6 +44,9 @@ static int set_plot_dimensions(char *dims, struct plot *p)
 			p->height = strtol(&end[1], NULL, 10);
 	}
 
+	if (p->height > MAXHEIGHT || p->width > MAXWIDTH)
+		return 0;
+
 	return 1;
 }
 
@@ -68,7 +74,7 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
-				fprintf(stderr, "invalid dimension string '%s'", optarg);
+				fprintf(stderr, "invalid dimensions '%s'", optarg);
 				exit(EXIT_FAILURE);
 			}
 			break;
