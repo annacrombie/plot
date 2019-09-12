@@ -35,5 +35,5 @@ struct plot_bounds {
 struct plot *plot_init();
 void plot_add(struct plot *plot, size_t len, double *data);
 void plot_plot(struct plot *plot);
-void plot_destroy(struct plot *plot);
+void plot_destroy(struct plot *plot, int free_data);
 #endif

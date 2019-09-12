@@ -218,7 +218,7 @@ void plot_plot(struct plot *plot)
 	free(canvas);
 }
 
-void plot_destroy(struct plot *plot)
+void plot_destroy(struct plot *plot, int free_data)
 {
 	struct plot_data *d, *e;
 
@@ -226,6 +226,8 @@ void plot_destroy(struct plot *plot)
 
 	while (d != NULL) {
 		e = d->next;
+		if (free_data)
+			free(d->data);
 		free(d);
 		d = e;
 	}
