@@ -1,5 +1,4 @@
 #include "plot.h"
-#define LOG(...) printf("%s:%d [\e[35m%s\e[0m] ", __FILE__, __LINE__, __func__); printf(__VA_ARGS__);
 
 static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
 //                         0  4  8  12 16 20 24 28 32
@@ -80,8 +79,6 @@ static struct plot_bounds *plot_data_get_bounds(struct plot_data *data)
 
 		data = data->next;
 	}
-
-	LOG("data bounds: %lf..%lf\n", bounds->min, bounds->max);
 
 	return bounds;
 }
