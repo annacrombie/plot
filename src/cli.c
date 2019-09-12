@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include "plot.h"
+#include <getopt.h>
 
 #define ARR_GROW_INC 5
 
@@ -51,62 +52,81 @@ size_t read_arr(double **arr)
 	}
 }
 
-void print_help()
+static void print_usage(FILE *f)
 {
-	printf(
-		"usage: plot [OPTS] -|point[ point [ ...]]\n"
-		"\n"
-		"OPTS\n"
-		"  -H HEIGHT - set total plot height to HEIGHT\n"
-		"     (default:  16)\n"
-		"  -f STRING - set y-axis label format string to STRING\n"
-		"     (default:  \"%%11.2f %%s\")\n"
+	fprintf(f,
+		"plot " PLOT_VERSION "\n"
+		"usage: plot [opts]\n"
+		"opts\n"
+		"  -d [width]:[height] - set plot dimensions\n"
 		"  -h - duh...\n"
 		);
 }
 
+/* parse a string like 34:54 with either side of the ':' optional.  If the
+ * string is valid, return 1, otherwise return 0.
+ */
+static int set_plot_dimensions(char *dims, struct plot *p)
+{
+	char *end, *sep;
+	size_t len = strlen(dims);
+
+	if (strspn(dims, "0123456789:") < len)
+		return 0;
+	if (len == 1)
+		return 1;
+
+	sep = strchr(dims, ':');
+
+	if (sep != strrchr(dims, ':'))
+		return 0;
+
+	if (sep == dims) {
+		p->height = strtol(&dims[1], NULL, 10);
+	} else {
+		p->width = strtol(dims, &end, 10);
+
+		if (end + 1 <= &dims[len - 1])
+			p->height = strtol(&end[1], NULL, 10);
+	}
+
+	return 1;
+}
+
+static void parse_opts(struct plot *p, int argc, char **argv)
+{
+	int opt;
+
+	while ((opt = getopt(argc, argv, "hd:")) != -1) {
+		switch (opt) {
+		case 'd':
+			if (!set_plot_dimensions(optarg, p)) {
+				fprintf(stderr, "invalid dimension string '%s'", optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'h':
+			print_usage(stdout);
+			exit(EXIT_SUCCESS);
+		default:
+			print_usage(stderr);
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
-	int i = 1;
 	size_t arrlen;
 	double *arr;
 
 	struct plot *p = plot_init();
-	/* Parse options */
-	char *opts[] = { "-h", "-H", "-f", "-v", "-c" };
 
-	for (; i < argc; i++) {
-		if (strcmp(argv[i], opts[0]) == 0) {
-			print_help();
-			free(p);
-			return 0;
-		} else if (strcmp(argv[i], opts[1]) == 0) {
-			if (argc > i + 1) {
-				p->height = atoi(argv[i + 1]);
-				if (p->height < 1) {
-					fprintf(stderr, "error: height must be >= 1\n");
-					free(p);
-					return 1;
-				}
-				i++;
-			} else {
-				fprintf(stderr, "error: %s requires a value\n", opts[1]);
-				free(p);
-				return 1;
-			}
-		} else if (strcmp(argv[i], opts[3]) == 0) {
-			printf("plot v%s\n", PLOT_VERSION);
-			free(p);
-			return 0;
-		} else {
-			break;
-		}
-	}
+	parse_opts(p, argc, argv);
 
-	/* Get the array from the rest of the options */
 	arrlen = read_arr(&arr);
 	if (arrlen < 1)
-		return 0;
+		return 1;
 
 	plot_add(p, arrlen, arr);
 	plot_plot(p);
