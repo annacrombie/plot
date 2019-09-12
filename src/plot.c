@@ -23,7 +23,7 @@ struct plot *plot_init()
 {
 	struct plot *plot;
 
-	plot = malloc(sizeof(struct plot));
+	plot = safe_malloc(sizeof(struct plot));
 
 	plot->data = NULL;
 	plot->height = 24;
@@ -38,7 +38,7 @@ static struct plot_data *plot_data_init(size_t len, double *data)
 {
 	struct plot_data *pd;
 
-	pd = malloc(sizeof(struct plot_data));
+	pd = safe_malloc(sizeof(struct plot_data));
 
 	pd->len = len;
 	pd->data = data;
@@ -68,7 +68,7 @@ static struct plot_bounds *plot_data_get_bounds(struct plot_data *data)
 	size_t i;
 	struct plot_bounds *bounds;
 
-	bounds = malloc(sizeof(struct plot_bounds));
+	bounds = safe_malloc(sizeof(struct plot_bounds));
 
 	bounds->max = DBL_MIN;
 	bounds->min = DBL_MAX;
@@ -90,7 +90,7 @@ static struct plot_bounds *plot_data_get_bounds(struct plot_data *data)
 static double *plot_make_labels(unsigned int height, struct plot_bounds *pb)
 {
 	unsigned int i;
-	double *labels = calloc(height, sizeof(double));
+	double *labels = safe_calloc(height, sizeof(double));
 	double inc = (pb->max - pb->min) / (double)(height - 1);
 	double s =  pb->min;
 
@@ -111,11 +111,11 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 	struct plot_data *d = p->data;
 
-	normalized = calloc(p->datasets, sizeof(long *));
+	normalized = safe_calloc(p->datasets, sizeof(long *));
 
 	j = 0;
 	while (d != NULL) {
-		normalized[j] = calloc(d->len + 1, sizeof(long));
+		normalized[j] = safe_calloc(d->len + 1, sizeof(long));
 
 		normalized[j][0] = d->len;
 		for (i = 1; i <= d->len; i++)
@@ -162,10 +162,10 @@ static void plot_write_norm(struct plot *plot, long *norm, char **canvas)
 static char **plot_fill_canvas(struct plot *plot, long **norm)
 {
 	size_t x, y, i;
-	char **canvas = calloc(plot->width, sizeof(char *));
+	char **canvas = safe_calloc(plot->width, sizeof(char *));
 
 	for (x = 0; x < plot->width; x++) {
-		canvas[x] = calloc(plot->height, 4 * sizeof(char));
+		canvas[x] = safe_calloc(plot->height, 4 * sizeof(char));
 		for (y = 0; y < plot->height; y++)
 			memcpy(canvas[x] + (y * 4), plot_peice_c(PPBlank), 4);
 	}

@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "float.h"
+#include <float.h>
+#include "util.h"
 
 struct plot_data {
 	double *data;
