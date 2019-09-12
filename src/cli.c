@@ -9,6 +9,7 @@ static void print_usage(FILE *f)
 		"usage: plot [opts]\n"
 		"opts\n"
 		"  -d [width]:[height] - set plot dimensions\n"
+		"  -i [filename|-] - specify a data source\n"
 		"  -h - duh...\n"
 		);
 }
@@ -43,17 +44,32 @@ static int set_plot_dimensions(char *dims, struct plot *p)
 	return 1;
 }
 
+static void add_data_from_file(FILE *f, struct plot *p)
+{
+	size_t len;
+	double *arr;
+
+	len = read_arr(f, &arr, p->width);
+	if (len >= 1)
+		plot_add(p, len, arr);
+}
+
 static void parse_opts(struct plot *p, int argc, char **argv)
 {
-	int opt;
+	char opt;
+	FILE *f;
 
-	while ((opt = getopt(argc, argv, "hd:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:hi:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
 				fprintf(stderr, "invalid dimension string '%s'", optarg);
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'i':
+			f = (strcmp(optarg, "-") == 0) ? stdin : fopen(optarg, "r");
+			add_data_from_file(f, p);
 			break;
 		case 'h':
 			print_usage(stdout);
@@ -67,22 +83,15 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	size_t arrlen;
-	double *arr;
-
 	struct plot *p = plot_init();
 
 	parse_opts(p, argc, argv);
 
-	arrlen = read_arr(stdin, &arr, p->width);
-	if (arrlen < 1)
-		return 1;
+	if (p->datasets == 0)
+		add_data_from_file(stdin, p);
 
-	plot_add(p, arrlen, arr);
 	plot_plot(p);
-	plot_destroy(p);
-
-	free(arr);
+	plot_destroy(p, 1);
 
 	return 0;
 }
