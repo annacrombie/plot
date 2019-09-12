@@ -49,12 +49,16 @@ static struct plot_data *plot_data_init(size_t len, double *data)
 
 void plot_add(struct plot *plot, size_t len, double *data)
 {
-	struct plot_data **d = &plot->data;
+	struct plot_data *d = plot->data;
 
-	while (*d != NULL)
-		*d = (*d)->next;
+	if (d == NULL) {
+		plot->data = plot_data_init(len, data);
+	} else {
+		while (d->next != NULL)
+			d = d->next;
 
-	*d = plot_data_init(len, data);
+		d->next = plot_data_init(len, data);
+	}
 
 	plot->datasets++;
 }
