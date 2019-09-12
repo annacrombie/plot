@@ -49,6 +49,11 @@ static void add_data_from_file(FILE *f, struct plot *p)
 	size_t len;
 	double *arr;
 
+	if (f == NULL) {
+		fprintf(stderr, "no such file\n");
+		exit(EXIT_FAILURE);
+	}
+
 	len = read_arr(f, &arr, p->width);
 	if (len >= 1)
 		plot_add(p, len, arr);
