@@ -15,16 +15,18 @@ struct plot {
 	unsigned int width;
 	size_t datasets;
 	struct x_label *x_label;
+	int color;
 };
 
 struct x_label {
 	unsigned int mod;
 	unsigned int every;
 	long start;
+	unsigned int color;
 };
 
 struct plot *plot_init();
-void plot_add(struct plot *plot, size_t len, double *data);
+void plot_add(struct plot *plot, size_t len, double *data, int color);
 void plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot, int free_data);
 #endif

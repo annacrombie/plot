@@ -5,6 +5,7 @@ struct plot_data {
 	double *data;
 	size_t len;
 	struct plot_data *next;
+	unsigned int color;
 };
 
 struct plot_bounds {
@@ -41,6 +42,7 @@ struct plot *plot_init()
 	xl->mod = 0;
 	xl->every = 0;
 	xl->start = 0;
+	xl->color = 0;
 
 	plot = safe_malloc(sizeof(struct plot));
 
@@ -49,11 +51,12 @@ struct plot *plot_init()
 	plot->width = 80;
 	plot->datasets = 0;
 	plot->x_label = xl;
+	plot->color = 0;
 
 	return plot;
 }
 
-static struct plot_data *plot_data_init(size_t len, double *data)
+static struct plot_data *plot_data_init(size_t len, double *data, int color)
 {
 	struct plot_data *pd;
 
@@ -62,21 +65,25 @@ static struct plot_data *plot_data_init(size_t len, double *data)
 	pd->len = len;
 	pd->data = data;
 	pd->next = NULL;
+	pd->color = color;
 
 	return pd;
 }
 
-void plot_add(struct plot *plot, size_t len, double *data)
+void plot_add(struct plot *plot, size_t len, double *data, int color)
 {
 	struct plot_data *d = plot->data;
 
+	if (color != 0)
+		plot->color = 1;
+
 	if (d == NULL) {
-		plot->data = plot_data_init(len, data);
+		plot->data = plot_data_init(len, data, color);
 	} else {
 		while (d->next != NULL)
 			d = d->next;
 
-		d->next = plot_data_init(len, data);
+		d->next = plot_data_init(len, data, color);
 	}
 
 	plot->datasets++;
@@ -134,11 +141,12 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 	j = 0;
 	while (d != NULL) {
-		normalized[j] = safe_calloc(d->len + 1, sizeof(long));
+		normalized[j] = safe_calloc(d->len + 2, sizeof(long));
 
-		normalized[j][0] = d->len;
-		for (i = 1; i <= d->len; i++)
-			normalized[j][i] = lround((d->data[i - 1] - b->min) * ratio);
+		normalized[j][0] = d->len + 2;
+		normalized[j][1] = d->color;
+		for (i = 2; i < normalized[j][0]; i++)
+			normalized[j][i] = lround((d->data[i - 2] - b->min) * ratio);
 
 		d = d->next;
 		j++;
@@ -164,16 +172,30 @@ static enum plot_peice plot_plot_peice(long y, long cur, long next)
 	return i;
 }
 
-static void plot_write_norm(struct plot *plot, long *norm, char **canvas)
+static void plot_write_norm(struct plot *plot, long *norm, char **canvas, int cs)
 {
 	enum plot_peice peice;
 	size_t x, y;
+	char clr[6];
+	char *p;
 
-	for (x = 1; x < norm[0] && x < plot->width; x++) {
+	if (norm[1] > 0)
+		snprintf(clr, 6, "%c[%ldm", 27, norm[1]);
+
+	for (x = 2; x < norm[0] && x < plot->width; x++) {
 		for (y = 0; y < plot->height; y++) {
 			peice = plot_plot_peice(y, norm[x], norm[x + 1]);
-			if (peice != PPBlank)
-				memcpy(canvas[x] + (y * 4), plot_peice_c(peice), 4);
+			if (peice == PPBlank)
+				continue;
+
+			p = canvas[x] + (y * cs);
+
+			if (norm[1] > 0) {
+				memcpy(p, clr, 5);
+				memcpy(p + 5, plot_peice_c(peice), 4);
+			} else {
+				memcpy(p, plot_peice_c(peice), 4);
+			}
 		}
 	}
 }
@@ -182,15 +204,17 @@ static char **plot_fill_canvas(struct plot *plot, long **norm)
 {
 	size_t x, y, i;
 	char **canvas = safe_calloc(plot->width, sizeof(char *));
+	int cs = plot->color ? 9 : 4;
 
 	for (x = 0; x < plot->width; x++) {
-		canvas[x] = safe_calloc(plot->height, 4 * sizeof(char));
+		canvas[x] = safe_calloc(plot->height, cs * sizeof(char));
+
 		for (y = 0; y < plot->height; y++)
-			memcpy(canvas[x] + (y * 4), plot_peice_c(PPBlank), 4);
+			memcpy(canvas[x] + (y * cs), plot_peice_c(PPBlank), 4);
 	}
 
 	for (i = 0; i < plot->datasets; i++)
-		plot_write_norm(plot, norm[i], canvas);
+		plot_write_norm(plot, norm[i], canvas, cs);
 
 	return canvas;
 }
@@ -198,12 +222,16 @@ static char **plot_fill_canvas(struct plot *plot, long **norm)
 static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 {
 	long x, y;
+	int cs = plot->color ? 9 : 4;
 
 	for (y = plot->height - 1; y >= 0; y--) {
+		if (plot->color)
+			printf("%c[0m", 27);
+
 		printf(y_label_fmt, labels[y], plot_peice_c(PPBarrier));
 
 		for (x = 0; x < plot->width; x++)
-			fputs(canvas[x] + (y * 4), stdout);
+			fputs(canvas[x] + (y * cs), stdout);
 
 		fputs("\n", stdout);
 	}
