@@ -14,8 +14,23 @@ static void print_usage(FILE *f)
 		"  -i [filename|-] - specify a data source\n"
 		"  -d [width]:[height] - set plot dimensions\n"
 		"  -x [every]:[offset]:[mod]:[color] - set x label format\n"
-		"  -c <color> - set color of next data source"
+		"  -c <color> - set color of next data source\n"
 		"  -h - duh...\n"
+		"\n"
+		"colors: "
+		"\e[4mb\e[0mlack, "
+		"\e[4mr\e[0med, "
+		"\e[4mg\e[0mreen, "
+		"\e[4my\e[0mellow, "
+		"b\e[4ml\e[0mue, "
+		"\e[4mm\e[0magenta, "
+		"\e[4mc\e[0myan, "
+		"\e[4mw\e[0mhite"
+		"\n"
+		"use capital character for bright variant\n"
+		"\n"
+		"ex.\n"
+		"seq 1 99 | shuf | plot -c g\n"
 		);
 }
 
@@ -105,7 +120,7 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
-				fprintf(stderr, "invalid dimensions '%s'", optarg);
+				fprintf(stderr, "invalid dimensions '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
 			break;
