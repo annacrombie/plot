@@ -188,7 +188,7 @@ static void plot_write_norm(struct plot *plot, long *norm, char **canvas, int cs
 			if (peice == PPBlank)
 				continue;
 
-			p = canvas[x] + (y * cs);
+			p = canvas[x - 2] + (y * cs);
 
 			if (norm[1] > 0) {
 				memcpy(p, clr, 5);
