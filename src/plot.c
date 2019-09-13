@@ -236,6 +236,8 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 		fputs("\n", stdout);
 	}
 
+	if (plot->color)
+		printf("%c[0m", 27);
 }
 
 static void plot_print_x_label(unsigned int w, struct x_label *xl)
