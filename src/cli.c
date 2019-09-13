@@ -13,36 +13,62 @@ static void print_usage(FILE *f)
 		"opts\n"
 		"  -d [width]:[height] - set plot dimensions\n"
 		"  -i [filename|-] - specify a data source\n"
+		"  -x [every]:[offset]:[mod]"
 		"  -h - duh...\n"
 		);
+}
+
+static int parse_next_num(char **buf, long *l)
+{
+	char *p;
+	int n = 1;
+
+	*l = 0;
+
+	if (is_digit(**buf)) {
+		*l = strtol(*buf, &p, 10);
+		*buf = p;
+		if (**buf == ':')
+			(*buf)++;
+		else if (**buf != '\0')
+			n = 0;
+	} else if (**buf == ':') {
+		(*buf)++;
+	} else if (**buf != '\0') {
+		n = 0;
+	}
+
+	return n;
+}
+
+static int set_x_label(char *s, struct x_label *xl)
+{
+	long l;
+
+	if (parse_next_num(&s, &l))
+		xl->every = l;
+
+	if (parse_next_num(&s, &l))
+		xl->start = l;
+
+	if (parse_next_num(&s, &l))
+		xl->mod = l;
+
+	return 1;
 }
 
 /* parse a string like 34:54 with either side of the ':' optional.  If the
  * string is valid, return 1, otherwise return 0.
  */
-static int set_plot_dimensions(char *dims, struct plot *p)
+static int set_plot_dimensions(char *s, struct plot *p)
 {
-	char *end, *sep;
-	size_t len = strlen(dims);
+	long l;
 
-	if (strspn(dims, "0123456789:") < len)
-		return 0;
-	if (len == 1)
-		return 1;
+	if (parse_next_num(&s, &l))
+		p->height = l;
 
-	sep = strchr(dims, ':');
-
-	if (sep != strrchr(dims, ':'))
-		return 0;
-
-	if (sep == dims) {
-		p->height = strtol(&dims[1], NULL, 10);
-	} else {
-		p->width = strtol(dims, &end, 10);
-
-		if (end + 1 <= &dims[len - 1])
-			p->height = strtol(&end[1], NULL, 10);
-	}
+	if (parse_next_num(&s, &l))
+		p->width = l;
 
 	if (p->height > MAXHEIGHT || p->width > MAXWIDTH)
 		return 0;
