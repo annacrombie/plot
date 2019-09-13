@@ -200,7 +200,7 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 	long x, y;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		printf("%11.2f %s", labels[y], plot_peice_c(PPBarrier));
+		printf(y_label_fmt, labels[y], plot_peice_c(PPBarrier));
 
 		for (x = 0; x < plot->width; x++)
 			fputs(canvas[x] + (y * 4), stdout);
@@ -210,15 +210,36 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 
 }
 
+static void plot_print_x_label(unsigned int w, struct x_label *xl)
+{
+	long cur;
+	long end = xl->start + w;
+	char buf[20];
+	int sign;
+
+	snprintf(buf, 20, "%%-%dld", xl->every);
+	printf(Y_LABEL_PAD);
+
+	for (cur = xl->start; cur < end; cur++)
+		if (cur % xl->every == 0) {
+			sign = cur < 0 ? -1 : 1;
+
+			printf(buf, sign * (xl->mod != 0 ? cur % xl->mod : cur));
+		}
+}
+
 void plot_plot(struct plot *plot)
 {
 	size_t i;
+
+	if (plot->datasets < 1)
+		return;
 
 	/* Determine the max and min of the array*/
 	struct plot_bounds *bounds = plot_data_get_bounds(plot->data);
 
 	/* Create the labels for the graph */
-	double *labels = plot_make_labels(plot->height, bounds);
+	double *y_labels = plot_make_labels(plot->height, bounds);
 
 	/* normalize the values from 0 to height and place the results in a new
 	 * array */
@@ -228,11 +249,14 @@ void plot_plot(struct plot *plot)
 	char **canvas = plot_fill_canvas(plot, normalized);
 
 	/* print the graph with labels */
-	plot_print_canvas(plot, labels, canvas);
+	plot_print_canvas(plot, y_labels, canvas);
+
+	if (plot->x_label->every > 0)
+		plot_print_x_label(plot->width, plot->x_label);
 
 	/* free everything */
 	free(bounds);
-	free(labels);
+	free(y_labels);
 	for (i = 0; i < plot->datasets; i++)
 		free(normalized[i]);
 	free(normalized);
@@ -255,5 +279,6 @@ void plot_destroy(struct plot *plot, int free_data)
 		d = e;
 	}
 
+	free(plot->x_label);
 	free(plot);
 }
