@@ -55,6 +55,8 @@ static int set_x_label(char *s, struct x_label *xl)
 	if (parse_next_num(&s, &l))
 		xl->mod = l;
 
+	xl->color = char_to_color(*s);
+
 	return 1;
 }
 
