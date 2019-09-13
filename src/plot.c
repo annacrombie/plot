@@ -221,6 +221,12 @@ static void plot_print_x_label(unsigned int w, struct x_label *xl)
 	printf(Y_LABEL_PAD);
 
 	for (cur = xl->start; cur < end; cur++)
+		if (cur % xl->every != 0)
+			printf(" ");
+		else
+			break;
+
+	for (; cur < end; cur++)
 		if (cur % xl->every == 0) {
 			sign = cur < 0 ? -1 : 1;
 
