@@ -71,7 +71,8 @@ static int set_plot_dimensions(char *s, struct plot *p)
 	if (parse_next_num(&s, &l))
 		p->width = l;
 
-	if (p->height > MAXHEIGHT || p->width > MAXWIDTH)
+	if (p->height > MAXHEIGHT || p->height < 1 ||
+	    p->width > MAXWIDTH || p->width < 1)
 		return 0;
 
 	return 1;
