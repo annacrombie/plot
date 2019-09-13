@@ -96,7 +96,7 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 	char opt;
 	FILE *f;
 
-	while ((opt = getopt(argc, argv, "d:hi:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:hi:x:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
@@ -107,6 +107,9 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 		case 'i':
 			f = (strcmp(optarg, "-") == 0) ? stdin : fopen(optarg, "r");
 			add_data_from_file(f, p);
+			break;
+		case 'x':
+			set_x_label(optarg, p->x_label);
 			break;
 		case 'h':
 			print_usage(stdout);
