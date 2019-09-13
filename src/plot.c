@@ -244,6 +244,7 @@ static void plot_print_x_label(unsigned int w, struct x_label *xl)
 	long end = xl->start + w;
 	char buf[20];
 	int sign;
+	long disp;
 
 	snprintf(buf, 20, "%%-%dld", xl->every);
 	printf(Y_LABEL_PAD);
@@ -257,8 +258,15 @@ static void plot_print_x_label(unsigned int w, struct x_label *xl)
 	for (; cur < end; cur++)
 		if (cur % xl->every == 0) {
 			sign = cur < 0 ? -1 : 1;
+			disp = sign * (xl->mod != 0 ? cur % xl->mod : cur);
 
-			printf(buf, sign * (xl->mod != 0 ? cur % xl->mod : cur));
+			if (xl->color > 0 && disp == 0) {
+				printf("%c[%dm", 27, xl->color);
+				printf(buf, disp);
+				printf("%c[0m", 27);
+			} else {
+				printf(buf, disp);
+			}
 		}
 }
 
