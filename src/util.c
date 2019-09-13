@@ -35,3 +35,64 @@ int is_digit(char c)
 		return 0;
 	}
 }
+
+unsigned int char_to_color(char c)
+{
+	unsigned int n;
+
+	switch (c) {
+	case 'b':
+		n = 30;
+		break;
+	case 'r':
+		n = 31;
+		break;
+	case 'g':
+		n = 32;
+		break;
+	case 'y':
+		n = 33;
+		break;
+	case 'l':
+		n = 34;
+		break;
+	case 'm':
+		n = 35;
+		break;
+	case 'c':
+		n = 36;
+		break;
+	case 'w':
+		n = 37;
+		break;
+	case 'B':
+		n = 90;
+		break;
+	case 'R':
+		n = 91;
+		break;
+	case 'G':
+		n = 92;
+		break;
+	case 'Y':
+		n = 93;
+		break;
+	case 'L':
+		n = 94;
+		break;
+	case 'M':
+		n = 95;
+		break;
+	case 'C':
+		n = 96;
+		break;
+	case 'W':
+		n = 97;
+		break;
+	default:
+		n = 0;
+		break;
+	}
+
+	return n;
+}
