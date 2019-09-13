@@ -11,9 +11,10 @@ static void print_usage(FILE *f)
 		"plot " PLOT_VERSION "\n"
 		"usage: plot [opts]\n"
 		"opts\n"
-		"  -d [width]:[height] - set plot dimensions\n"
 		"  -i [filename|-] - specify a data source\n"
-		"  -x [every]:[offset]:[mod]"
+		"  -d [width]:[height] - set plot dimensions\n"
+		"  -x [every]:[offset]:[mod]:[color] - set x label format\n"
+		"  -c <color> - set color of next data source"
 		"  -h - duh...\n"
 		);
 }
@@ -76,7 +77,7 @@ static int set_plot_dimensions(char *s, struct plot *p)
 	return 1;
 }
 
-static void add_data_from_file(FILE *f, struct plot *p)
+static void add_data_from_file(FILE *f, struct plot *p, int color)
 {
 	size_t len;
 	double *arr;
@@ -88,15 +89,16 @@ static void add_data_from_file(FILE *f, struct plot *p)
 
 	len = read_arr(f, &arr, p->width);
 	if (len >= 1)
-		plot_add(p, len, arr);
+		plot_add(p, len, arr, color);
 }
 
-static void parse_opts(struct plot *p, int argc, char **argv)
+static int parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
 	FILE *f;
+	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "d:hi:x:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:hi:x:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
@@ -106,10 +108,14 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 'i':
 			f = (strcmp(optarg, "-") == 0) ? stdin : fopen(optarg, "r");
-			add_data_from_file(f, p);
+			add_data_from_file(f, p, lc);
+			lc = 0;
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);
+			break;
+		case 'c':
+			lc = char_to_color(*optarg);
 			break;
 		case 'h':
 			print_usage(stdout);
@@ -119,16 +125,18 @@ static void parse_opts(struct plot *p, int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	return lc;
 }
 
 int main(int argc, char **argv)
 {
 	struct plot *p = plot_init();
 
-	parse_opts(p, argc, argv);
+	int lc = parse_opts(p, argc, argv);
 
 	if (p->datasets == 0)
-		add_data_from_file(stdin, p);
+		add_data_from_file(stdin, p, lc);
 
 	plot_plot(p);
 	plot_destroy(p, 1);
