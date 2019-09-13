@@ -1,5 +1,18 @@
 #include "plot.h"
+#define Y_LABEL_PAD "             "
 
+struct plot_data {
+	double *data;
+	size_t len;
+	struct plot_data *next;
+};
+
+struct plot_bounds {
+	double max;
+	double min;
+};
+
+static char *y_label_fmt = "%11.2f %s";
 static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
 //                         0  4  8  12 16 20 24 28 32
 enum plot_peice {
@@ -22,14 +35,20 @@ static char *plot_peice_c(enum plot_peice p)
 struct plot *plot_init()
 {
 	struct plot *plot;
+	struct x_label *xl;
+
+	xl = safe_malloc(sizeof(struct x_label));
+	xl->mod = 0;
+	xl->every = 0;
+	xl->start = 0;
 
 	plot = safe_malloc(sizeof(struct plot));
 
 	plot->data = NULL;
 	plot->height = 24;
 	plot->width = 80;
-	plot->orientation = Horizontal;
 	plot->datasets = 0;
+	plot->x_label = xl;
 
 	return plot;
 }

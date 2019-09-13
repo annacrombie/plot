@@ -9,28 +9,18 @@
 #include <float.h>
 #include "util.h"
 
-struct plot_data {
-	double *data;
-	size_t len;
-	struct plot_data *next;
-};
-
-enum Orientation {
-	Vertical,
-	Horizontal
-};
-
 struct plot {
 	struct plot_data *data;
 	unsigned int height;
 	unsigned int width;
 	size_t datasets;
-	enum Orientation orientation;
+	struct x_label *x_label;
 };
 
-struct plot_bounds {
-	double max;
-	double min;
+struct x_label {
+	unsigned int mod;
+	unsigned int every;
+	long start;
 };
 
 struct plot *plot_init();
