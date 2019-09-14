@@ -6,4 +6,5 @@
 #include <string.h>
 #include "util.h"
 size_t read_arr(FILE *f, double **arr, size_t maxlen);
+int read_next_num(FILE *f, long *num);
 #endif

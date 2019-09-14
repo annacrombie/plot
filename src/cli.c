@@ -1,6 +1,9 @@
+#define _POSIX_C_SOURCE 2
+
+#include <getopt.h>
+#include <signal.h>
 #include "plot.h"
 #include "read_arr.h"
-#include <getopt.h>
 
 #define MAXWIDTH 1000
 #define MAXHEIGHT 1000
@@ -15,6 +18,7 @@ static void print_usage(FILE *f)
 		"  -d [width]:[height] - set plot dimensions\n"
 		"  -x [every]:[offset]:[mod]:[color] - set x label format\n"
 		"  -c <color> - set color of next data source\n"
+		"  -f - \"follow\" input, only works with stdin\n"
 		"  -h - duh...\n"
 		"\n"
 		"colors: "
@@ -116,13 +120,16 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	FILE *f;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:hi:x:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:x:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
 				fprintf(stderr, "invalid dimensions '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'f':
+			p->follow = 1;
 			break;
 		case 'i':
 			f = (strcmp(optarg, "-") == 0) ? stdin : fopen(optarg, "r");
@@ -147,16 +154,56 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	return lc;
 }
 
+static void follow_plot(struct plot *p, FILE *f, int color)
+{
+	double *arr = safe_calloc(p->width, sizeof(double));
+	size_t arr_i = 0;
+	long num;
+
+	printf("%c[?25l", 27);
+
+	while (read_next_num(f, &num)) {
+		arr[arr_i] = num;
+		arr_i++;
+
+		plot_add(p, arr_i, arr, color);
+		plot_plot(p);
+		free(p->data);
+		p->data = NULL;
+		p->datasets = 0;
+		printf("%c[%dA", 27, p->height);
+
+		if (arr_i == p->width)
+			break;
+	}
+
+	printf("%c[%dB%c[?12l%c[?25h", 27, p->height, 27, 27);
+}
+
+static void handle_sigint(int _)
+{
+	printf("%c[?12l%c[?25h", 27, 27);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
+	struct sigaction sigact;
 	struct plot *p = plot_init();
 
 	int lc = parse_opts(p, argc, argv);
 
-	if (p->datasets == 0)
-		add_data_from_file(stdin, p, lc);
+	if (p->follow) {
+		sigact.sa_handler = handle_sigint;
+		sigaction(SIGINT, &sigact, NULL);
+		follow_plot(p, stdin, lc);
+	} else {
+		if (p->datasets == 0)
+			add_data_from_file(stdin, p, lc);
 
-	plot_plot(p);
+		plot_plot(p);
+	}
+
 	plot_destroy(p, 1);
 
 	return 0;

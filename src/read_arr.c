@@ -4,13 +4,30 @@
 
 size_t read_arr(FILE *f, double **arr, size_t maxlen)
 {
+	size_t len;
+	long num;
+
+	len = 0;
+	*arr = safe_calloc(maxlen, sizeof(double));
+
+	while (read_next_num(f, &num)) {
+		(*arr)[len] = num;
+		len++;
+
+		if (len == maxlen)
+			return maxlen;
+	}
+
+	return len;
+}
+
+int read_next_num(FILE *f, long *num)
+{
 	char numbuf[MAX_NUM_LEN + 1] = "";
 	char buf[] = "\0";
-	size_t numbuf_i, len;
+	size_t numbuf_i;
 
-	numbuf_i = len = 0;
-
-	*arr = safe_calloc(maxlen, sizeof(double));
+	numbuf_i = 0;
 
 	while (fread(buf, 1, sizeof(char), f) != 0) {
 		if (is_digit(*buf)) {
@@ -23,13 +40,10 @@ size_t read_arr(FILE *f, double **arr, size_t maxlen)
 			numbuf[numbuf_i + 1] = '\0';
 			numbuf_i++;
 		} else {
-			(*arr)[len] = strtod(numbuf, NULL);
-			len++;
-			numbuf_i = 0;
-			if (len == maxlen)
-				return maxlen;
+			*num = strtod(numbuf, NULL);
+			return 1;
 		}
 	}
 
-	return len;
+	return 0;
 }

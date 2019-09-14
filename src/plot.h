@@ -16,6 +16,7 @@ struct plot {
 	size_t datasets;
 	struct x_label *x_label;
 	int color;
+	int follow;
 };
 
 struct x_label {

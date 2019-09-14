@@ -52,6 +52,7 @@ struct plot *plot_init()
 	plot->datasets = 0;
 	plot->x_label = xl;
 	plot->color = 0;
+	plot->follow = 0;
 
 	return plot;
 }
