@@ -160,6 +160,7 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 static void follow_plot(struct plot *p, FILE *f, int color)
 {
 	double *arr = safe_calloc(p->width, sizeof(double));
+	double *arr2 = safe_calloc(p->width, sizeof(double));
 	size_t arr_i = 0;
 	long num;
 
@@ -167,7 +168,15 @@ static void follow_plot(struct plot *p, FILE *f, int color)
 
 	while (read_next_num(f, &num)) {
 		arr[arr_i] = num;
-		arr_i++;
+
+		if (arr_i >= p->width - 1) {
+			for (arr_i = 1; arr_i < p->width; arr_i++)
+				arr2[arr_i - 1] = arr[arr_i];
+			arr = arr2;
+			arr_i = p->width - 1;
+		} else {
+			arr_i++;
+		}
 
 		plot_add(p, arr_i, arr, color);
 		plot_plot(p);
@@ -175,9 +184,6 @@ static void follow_plot(struct plot *p, FILE *f, int color)
 		p->data = NULL;
 		p->datasets = 0;
 		printf("%c[%dA", 27, p->height);
-
-		if (arr_i == p->width)
-			break;
 	}
 
 	printf("%c[%dB%c[?12l%c[?25h", 27, p->height, 27, 27);
