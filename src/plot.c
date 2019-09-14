@@ -2,7 +2,7 @@
 #define Y_LABEL_PAD "             "
 #define Y_LABEL_FMT "%11.2f %s"
 
-static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
+static char plot_peice[][4] = { "┤", "┼", "─", "│", "╰", "╭", "╮", "╯", " " };
 
 struct plot_data {
 	double *data;
@@ -27,11 +27,6 @@ enum plot_peice {
 	PPRightUp,
 	PPBlank
 };
-
-static char *plot_peice_c(enum plot_peice p)
-{
-	return &plot_chars[p * 4];
-}
 
 struct plot *plot_init()
 {
@@ -193,9 +188,9 @@ static void plot_write_norm(struct plot *plot, long *norm, char **canvas, int cs
 
 			if (norm[1] > 0) {
 				memcpy(p, clr, 5);
-				memcpy(p + 5, plot_peice_c(peice), 4);
+				memcpy(p + 5, plot_peice[peice], 4);
 			} else {
-				memcpy(p, plot_peice_c(peice), 4);
+				memcpy(p, plot_peice[peice], 4);
 			}
 		}
 	}
@@ -211,7 +206,7 @@ static char **plot_fill_canvas(struct plot *plot, long **norm)
 		canvas[x] = safe_calloc(plot->height, cs * sizeof(char));
 
 		for (y = 0; y < plot->height; y++)
-			memcpy(canvas[x] + (y * cs), plot_peice_c(PPBlank), 4);
+			memcpy(canvas[x] + (y * cs), plot_peice[PPBlank], 4);
 	}
 
 	for (i = 0; i < plot->datasets; i++)
@@ -229,7 +224,7 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 		if (plot->color)
 			printf("%c[0m", 27);
 
-		printf(Y_LABEL_FMT, labels[y], plot_peice_c(PPBarrier));
+		printf(Y_LABEL_FMT, labels[y], plot_peice[PPBarrier]);
 
 		for (x = 0; x < plot->width; x++)
 			fputs(canvas[x] + (y * cs), stdout);
