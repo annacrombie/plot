@@ -1,5 +1,8 @@
 #include "plot.h"
 #define Y_LABEL_PAD "             "
+#define Y_LABEL_FMT "%11.2f %s"
+
+static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
 
 struct plot_data {
 	double *data;
@@ -13,9 +16,6 @@ struct plot_bounds {
 	double min;
 };
 
-static char *y_label_fmt = "%11.2f %s";
-static char *plot_chars = "┤\0┼\0─\0│\0╰\0╭\0╮\0╯\0 \0\0\0";
-//                         0  4  8  12 16 20 24 28 32
 enum plot_peice {
 	PPBarrier,
 	PPCross,
@@ -229,7 +229,7 @@ static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
 		if (plot->color)
 			printf("%c[0m", 27);
 
-		printf(y_label_fmt, labels[y], plot_peice_c(PPBarrier));
+		printf(Y_LABEL_FMT, labels[y], plot_peice_c(PPBarrier));
 
 		for (x = 0; x < plot->width; x++)
 			fputs(canvas[x] + (y * cs), stdout);
