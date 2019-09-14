@@ -2,7 +2,13 @@
 #define Y_LABEL_PAD "             "
 #define Y_LABEL_FMT "%11.2f %s"
 
-static char plot_peice[][4] = { "┤", "┼", "─", "│", "╰", "╭", "╮", "╯", " " };
+//static char plot_peice[][4] = { "┤", "┼", "─", "│", "╰", "╭", "╮", "╯", " " };
+
+static char plot_peices[][4] = {
+	" ", "─", "│", "┼",
+	"╮", "╯", "╰", "╭",
+	"┬", "┤", "┴", "├",
+};
 
 struct plot_data {
 	double *data;
@@ -17,15 +23,42 @@ struct plot_bounds {
 };
 
 enum plot_peice {
-	PPBarrier,
-	PPCross,
-	PPRight,
-	PPVert,
-	PPDownRight,
-	PPUpRight,
-	PPRightDown,
-	PPRightUp,
-	PPBlank
+	PPBlank,        //0
+	PPHoriz,        //1
+	PPVert,         //2
+	PPCross,        //3
+
+	PPRightDown,    //4
+	PPRightUp,      //5
+	PPDownRight,    //6
+	PPUpRight,      //7
+
+	PPTDown,        //8
+	PPTLeft,        //9
+	PPTUp,          //10
+	PPTRight        //11
+};
+
+static enum plot_peice join_matrix[12][12] = {
+/*       ' '  ─   │   ┼   ╮   ╯   ╰   ╭   ┬   ┤   ┴   ├ */
+	{ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11 },     /* ' ' */
+	{ 1,  1,  3,  3,  8,  10, 10, 8,  8,  3,  10, 3  },     /*  ─  */
+	{ 2,  3,  2,  3,  9,  9,  11, 11, 3,  9,  3,  11 },     /*  │  */
+	{ 3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3  },     /*  ┼  */
+	{ 4,  8,  9,  3,  4,  9,  3,  8,  8,  9,  3,  3  },     /*  ╮  */
+	{ 5,  10, 9,  3,  9,  5,  10, 3,  3,  9,  10, 3  },     /*  ╯  */
+	{ 6,  10, 11, 3,  3,  10, 6,  11, 3,  3,  10, 11 },     /*  ╰  */
+	{ 7,  8,  11, 3,  8,  3,  11, 7,  8,  3,  3,  11 },     /*  ╭  */
+	{ 8,  8,  3,  3,  8,  3,  3,  8,  8,  3,  3,  3  },     /*  ┬  */
+	{ 9,  3,  9,  3,  9,  9,  3,  3,  3,  9,  3,  3  },     /*  ┤  */
+	{ 10, 10, 3,  3,  3,  10, 10, 3,  3,  3,  10, 3  },     /*  ┴  */
+	{ 11, 3,  11, 3,  3,  3,  11, 11, 3,  3,  3,  11 }      /*  ├  */
+
+};
+
+struct canvas_elem {
+	enum plot_peice peice;
+	unsigned int color;
 };
 
 struct plot *plot_init()
@@ -48,6 +81,7 @@ struct plot *plot_init()
 	plot->x_label = xl;
 	plot->color = 0;
 	plot->follow = 0;
+	plot->combine = 0;
 
 	return plot;
 }
@@ -152,14 +186,14 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 }
 
-static enum plot_peice plot_plot_peice(long y, long cur, long next)
+static enum plot_peice next_peice(long y, long cur, long next)
 {
 	enum plot_peice i;
 
 	if (y == cur)
-		i = next > cur ? PPRightUp : next < cur ? PPRightDown : PPRight;
+		i = next > cur ? PPRightUp : next < cur ? PPRightDown : PPHoriz;
 	else if (y == next)
-		i = next > cur ? PPUpRight : next < cur ? PPDownRight : PPRight;
+		i = next > cur ? PPUpRight : next < cur ? PPDownRight : PPHoriz;
 	else if ((y > cur && y < next) || (y < cur && y > next))
 		i = PPVert;
 	else
@@ -168,68 +202,71 @@ static enum plot_peice plot_plot_peice(long y, long cur, long next)
 	return i;
 }
 
-static void plot_write_norm(struct plot *plot, long *norm, char **canvas, int cs)
+static enum plot_peice combine_plot_peices(enum plot_peice a, enum plot_peice b)
 {
-	enum plot_peice peice;
-	size_t x, y;
-	char clr[6];
-	char *p;
+	return join_matrix[a][b];
+}
 
-	if (norm[1] > 0)
-		snprintf(clr, 6, "%c[%ldm", 27, norm[1]);
+static void plot_write_norm(struct plot *plot, long *norm, struct canvas_elem **c)
+{
+	size_t x, y;
+	enum plot_peice next;
 
 	for (x = 2; x < norm[0] && x < plot->width; x++) {
 		for (y = 0; y < plot->height; y++) {
-			peice = plot_plot_peice(y, norm[x], norm[x + 1]);
-			if (peice == PPBlank)
+			next = next_peice(y, norm[x], norm[x + 1]);
+
+			if (next == PPBlank)
 				continue;
 
-			p = canvas[x - 2] + (y * cs);
+			if (plot->combine)
+				next = combine_plot_peices(c[x][y].peice, next);
 
-			if (norm[1] > 0) {
-				memcpy(p, clr, 5);
-				memcpy(p + 5, plot_peice[peice], 4);
-			} else {
-				memcpy(p, plot_peice[peice], 4);
-			}
+			c[x][y].color = norm[1];
+			c[x][y].peice = next;
 		}
 	}
 }
 
-static char **plot_fill_canvas(struct plot *plot, long **norm)
+static struct canvas_elem **plot_fill_canvas(struct plot *plot, long **norm)
 {
 	size_t x, y, i;
-	char **canvas = safe_calloc(plot->width, sizeof(char *));
-	int cs = plot->color ? 9 : 4;
+	struct canvas_elem **canvas =
+		safe_calloc(plot->width, sizeof(struct canvas_elem *));
 
 	for (x = 0; x < plot->width; x++) {
-		canvas[x] = safe_calloc(plot->height, cs * sizeof(char));
+		canvas[x] = safe_calloc(plot->height, sizeof(struct canvas_elem));
 
-		for (y = 0; y < plot->height; y++)
-			memcpy(canvas[x] + (y * cs), plot_peice[PPBlank], 4);
+		for (y = 0; y < plot->height; y++) {
+			canvas[x][y].color = 0;
+			canvas[x][y].peice = PPBlank;
+		}
 	}
 
 	for (i = 0; i < plot->datasets; i++)
-		plot_write_norm(plot, norm[i], canvas, cs);
+		plot_write_norm(plot, norm[i], canvas);
 
 	return canvas;
 }
 
-static void plot_print_canvas(struct plot *plot, double *labels, char **canvas)
+static void plot_print_canvas(struct plot *plot, double *labels, struct canvas_elem **canvas)
 {
 	long x, y;
-	int cs = plot->color ? 9 : 4;
 
 	for (y = plot->height - 1; y >= 0; y--) {
 		if (plot->color)
 			printf("%c[0m", 27);
 
-		printf(Y_LABEL_FMT, labels[y], plot_peice[PPBarrier]);
+		printf(Y_LABEL_FMT, labels[y], plot_peices[PPTLeft]);
 
-		for (x = 0; x < plot->width; x++)
-			fputs(canvas[x] + (y * cs), stdout);
+		for (x = 0; x < plot->width; x++) {
+			if (canvas[x][y].color > 0)
+				printf("\e[%dm", canvas[x][y].color);
 
-		fputs("\n", stdout);
+			printf("%s", plot_peices[canvas[x][y].peice]);
+		}
+
+		printf("\n");
 	}
 
 	if (plot->color)
@@ -286,7 +323,7 @@ void plot_plot(struct plot *plot)
 	long **normalized = plot_normalize_data(plot, bounds);
 
 	/* create the graph */
-	char **canvas = plot_fill_canvas(plot, normalized);
+	struct canvas_elem **canvas = plot_fill_canvas(plot, normalized);
 
 	/* print the graph with labels */
 	plot_print_canvas(plot, y_labels, canvas);

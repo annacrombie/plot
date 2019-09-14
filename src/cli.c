@@ -120,7 +120,7 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	FILE *f;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:x:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:jx:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
@@ -135,6 +135,9 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 			f = (strcmp(optarg, "-") == 0) ? stdin : fopen(optarg, "r");
 			add_data_from_file(f, p, lc);
 			lc = 0;
+			break;
+		case 'j':
+			p->combine = 1;
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);
