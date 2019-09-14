@@ -81,7 +81,7 @@ struct plot *plot_init()
 	plot->x_label = xl;
 	plot->color = 0;
 	plot->follow = 0;
-	plot->combine = 0;
+	plot->merge_plot_peices = 0;
 
 	return plot;
 }
@@ -219,7 +219,7 @@ static void plot_write_norm(struct plot *plot, long *norm, struct canvas_elem **
 			if (next == PPBlank)
 				continue;
 
-			if (plot->combine)
+			if (plot->merge_plot_peices)
 				next = combine_plot_peices(c[x][y].peice, next);
 
 			c[x][y].color = norm[1];

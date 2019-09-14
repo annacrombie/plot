@@ -19,6 +19,7 @@ static void print_usage(FILE *f)
 		"  -x [every]:[offset]:[mod]:[color] - set x label format\n"
 		"  -c <color> - set color of next data source\n"
 		"  -f - \"follow\" input, only works with stdin\n"
+		"  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴\n"
 		"  -h - duh...\n"
 		"\n"
 		"colors: "
@@ -120,7 +121,7 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	FILE *f;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:jx:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:mx:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
@@ -136,8 +137,8 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 			add_data_from_file(f, p, lc);
 			lc = 0;
 			break;
-		case 'j':
-			p->combine = 1;
+		case 'm':
+			p->merge_plot_peices = 1;
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);

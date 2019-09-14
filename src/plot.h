@@ -17,7 +17,7 @@ struct plot {
 	struct x_label *x_label;
 	int color;
 	int follow;
-	int combine;
+	int merge_plot_peices;
 };
 
 struct x_label {
