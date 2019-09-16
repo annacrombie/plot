@@ -2,12 +2,39 @@
 #define Y_LABEL_PAD "             "
 #define Y_LABEL_FMT "%11.2f %s"
 
-//static char plot_peice[][4] = { "┤", "┼", "─", "│", "╰", "╭", "╮", "╯", " " };
+/*
+          0000 0
+        ╭ 0011 3
+        │ 0101 5
+        ╰ 0110 6
+        ├ 0111 7
+        ╮ 1001 9
+        ─ 1010 a
+        ┬ 1011 b
+        ╯ 1100 c
+        ┤ 1101 d
+        ┴ 1110 e
+        ┼ 1111 f
+ */
 
 static char plot_peices[][4] = {
-	" ", "─", "│", "┼",
-	"╮", "╯", "╰", "╭",
-	"┬", "┤", "┴", "├",
+	" ", " ", " ", "╭", " ", "│", "╰", "├",
+	" ", "╮", "─", "┬", "╯", "┤", "┴", "┼",
+};
+
+enum plot_peice {
+	PPBlank     = 0x0,
+	PPUpRight   = 0x3,
+	PPVert      = 0x5,
+	PPDownRight = 0x6,
+	PPTRight    = 0x7,
+	PPRightDown = 0x9,
+	PPHoriz     = 0xa,
+	PPTDown     = 0xb,
+	PPRightUp   = 0xc,
+	PPTLeft     = 0xd,
+	PPTUp       = 0xe,
+	PPCross     = 0xf,
 };
 
 struct plot_data {
@@ -20,40 +47,6 @@ struct plot_data {
 struct plot_bounds {
 	double max;
 	double min;
-};
-
-enum plot_peice {
-	PPBlank,        //0
-	PPHoriz,        //1
-	PPVert,         //2
-	PPCross,        //3
-
-	PPRightDown,    //4
-	PPRightUp,      //5
-	PPDownRight,    //6
-	PPUpRight,      //7
-
-	PPTDown,        //8
-	PPTLeft,        //9
-	PPTUp,          //10
-	PPTRight        //11
-};
-
-static enum plot_peice join_matrix[12][12] = {
-/*       ' '  ─   │   ┼   ╮   ╯   ╰   ╭   ┬   ┤   ┴   ├ */
-	{ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11 },     /* ' ' */
-	{ 1,  1,  3,  3,  8,  10, 10, 8,  8,  3,  10, 3  },     /*  ─  */
-	{ 2,  3,  2,  3,  9,  9,  11, 11, 3,  9,  3,  11 },     /*  │  */
-	{ 3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3  },     /*  ┼  */
-	{ 4,  8,  9,  3,  4,  9,  3,  8,  8,  9,  3,  3  },     /*  ╮  */
-	{ 5,  10, 9,  3,  9,  5,  10, 3,  3,  9,  10, 3  },     /*  ╯  */
-	{ 6,  10, 11, 3,  3,  10, 6,  11, 3,  3,  10, 11 },     /*  ╰  */
-	{ 7,  8,  11, 3,  8,  3,  11, 7,  8,  3,  3,  11 },     /*  ╭  */
-	{ 8,  8,  3,  3,  8,  3,  3,  8,  8,  3,  3,  3  },     /*  ┬  */
-	{ 9,  3,  9,  3,  9,  9,  3,  3,  3,  9,  3,  3  },     /*  ┤  */
-	{ 10, 10, 3,  3,  3,  10, 10, 3,  3,  3,  10, 3  },     /*  ┴  */
-	{ 11, 3,  11, 3,  3,  3,  11, 11, 3,  3,  3,  11 }      /*  ├  */
-
 };
 
 struct canvas_elem {
@@ -202,11 +195,6 @@ static enum plot_peice next_peice(long y, long cur, long next)
 	return i;
 }
 
-static enum plot_peice combine_plot_peices(enum plot_peice a, enum plot_peice b)
-{
-	return join_matrix[a][b];
-}
-
 static void plot_write_norm(struct plot *plot, long *norm, struct canvas_elem **c)
 {
 	size_t x, y;
@@ -220,7 +208,7 @@ static void plot_write_norm(struct plot *plot, long *norm, struct canvas_elem **
 				continue;
 
 			if (plot->merge_plot_peices)
-				next = combine_plot_peices(c[x][y].peice, next);
+				next = c[x][y].peice | next;
 
 			c[x][y].color = norm[1];
 			c[x][y].peice = next;
@@ -303,6 +291,8 @@ static void plot_print_x_label(unsigned int w, struct x_label *xl)
 				printf(buf, disp);
 			}
 		}
+
+	printf("\n");
 }
 
 void plot_plot(struct plot *plot)
