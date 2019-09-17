@@ -1,23 +1,26 @@
-#ifndef PLOT_H__
-
-#define PLOT_H__
+#ifndef _PLOT_H_
+#define _PLOT_H_
 #define PLOT_VERSION "0.2.0"
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include "util.h"
 
 struct plot {
 	struct plot_data *data;
 	unsigned int height;
 	unsigned int width;
 	size_t datasets;
-	struct x_label *x_label;
 	int color;
 	int follow;
 	int merge_plot_peices;
+	struct x_label *x_label;
+	struct y_label *y_label;
+};
+
+struct y_label {
+	unsigned int width;
+	unsigned int prec;
+	int side;
+	char *r_fmt;
+	char *l_fmt;
 };
 
 struct x_label {
@@ -25,6 +28,8 @@ struct x_label {
 	unsigned int every;
 	long start;
 	unsigned int color;
+	int side;
+	char *label;
 };
 
 struct plot *plot_init();

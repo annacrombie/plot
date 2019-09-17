@@ -2,7 +2,7 @@
 
 #include <getopt.h>
 #include <signal.h>
-#include "plot.h"
+#include "plot/plot.h"
 #include "read_arr.h"
 
 #define MAXWIDTH 1000
@@ -16,7 +16,8 @@ static void print_usage(FILE *f)
 		"opts\n"
 		"  -i [filename|-] - specify a data source\n"
 		"  -d [width]:[height] - set plot dimensions\n"
-		"  -x [every]:[offset]:[mod]:[color] - set x label format\n"
+		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
+		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"
 		"  -f - \"follow\" input, only works with stdin\n"
 		"  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴\n"
@@ -75,7 +76,26 @@ static int set_x_label(char *s, struct x_label *xl)
 	if (parse_next_num(&s, &l))
 		xl->mod = l;
 
+	if (parse_next_num(&s, &l))
+		xl->side = l % 4;
+
 	xl->color = char_to_color(*s);
+
+	return 1;
+}
+
+static int set_y_label(char *s, struct y_label *yl)
+{
+	long l;
+
+	if (parse_next_num(&s, &l))
+		yl->width = l;
+
+	if (parse_next_num(&s, &l))
+		yl->prec = l;
+
+	if (parse_next_num(&s, &l))
+		yl->side = l % 4;
 
 	return 1;
 }
@@ -121,7 +141,7 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	FILE *f;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:mx:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:mx:y:")) != -1) {
 		switch (opt) {
 		case 'd':
 			if (!set_plot_dimensions(optarg, p)) {
@@ -142,6 +162,9 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);
+			break;
+		case 'y':
+			set_y_label(optarg, p->y_label);
 			break;
 		case 'c':
 			lc = char_to_color(*optarg);
