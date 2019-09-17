@@ -1,5 +1,3 @@
-target/
-ext/extconf.h
-ext/Makefile
+build/
 *.log
 *.so
