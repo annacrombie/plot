@@ -26,11 +26,13 @@ int read_next_num(FILE *f, long *num)
 	char numbuf[MAX_NUM_LEN + 1] = "";
 	char buf[] = "\0";
 	size_t numbuf_i;
+	int reading_digit = 0;
 
 	numbuf_i = 0;
 
 	while (fread(buf, 1, sizeof(char), f) != 0) {
 		if (is_digit(*buf)) {
+			reading_digit = 1;
 			if (numbuf_i == MAX_NUM_LEN - 1) {
 				fprintf(stderr, "number too long\n");
 				exit(EXIT_FAILURE);
@@ -39,7 +41,7 @@ int read_next_num(FILE *f, long *num)
 			numbuf[numbuf_i] = *buf;
 			numbuf[numbuf_i + 1] = '\0';
 			numbuf_i++;
-		} else {
+		} else if (reading_digit) {
 			*num = strtod(numbuf, NULL);
 			return 1;
 		}
