@@ -56,6 +56,7 @@ static int parse_next_num(char **buf, long *l)
 			n = 0;
 	} else if (**buf == ':') {
 		(*buf)++;
+		n = 0;
 	} else if (**buf != '\0') {
 		n = 0;
 	}
