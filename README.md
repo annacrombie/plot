@@ -34,7 +34,7 @@ $ ninja -C build
 You might want to put the executable somewhere in your `$PATH`, e.g.
 
 ```
-$ cp target/release/plot /usr/local/bin/plot
+$ cp build/plot /usr/local/bin/
 ```
 
 # Usage
@@ -43,7 +43,7 @@ $ cp target/release/plot /usr/local/bin/plot
 plot 0.2.0
 usage: plot [opts]
 opts
-  -i [filename|-] - specify a data source
+  -i [filename|-] - add a data source
   -d [width]:[height] - set plot dimensions
   -x [every]:[offset]:[mod]:[side]:[color] - set x label format
   -y [width]:[prec]:[side] - set y label format
@@ -56,7 +56,7 @@ colors: black, red, green, yellow, blue, magenta, cyan, white
 use capital character for bright variant
 
 ex.
-seq 1 99 | shuf | plot -c g
+seq 1 99 | shuf | plot -cg
 ```
 
 # Credits
