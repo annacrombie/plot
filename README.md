@@ -25,7 +25,8 @@ $ plot <<<"1 2 3 4 5 4 3 2 1"
 # Building
 
 ```
-$ make
+$ meson build
+$ ninja -C build
 ```
 
 # Installing
@@ -42,9 +43,20 @@ $ cp target/release/plot /usr/local/bin/plot
 plot 0.2.0
 usage: plot [opts]
 opts
+  -i [filename|-] - specify a data source
   -d [width]:[height] - set plot dimensions
+  -x [every]:[offset]:[mod]:[side]:[color] - set x label format
+  -y [width]:[prec]:[side] - set y label format
+  -c <color> - set color of next data source
+  -f - "follow" input, only works with stdin
+  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴
   -h - duh...
 
+colors: black, red, green, yellow, blue, magenta, cyan, white
+use capital character for bright variant
+
+ex.
+seq 1 99 | shuf | plot -c g
 ```
 
 # Credits
