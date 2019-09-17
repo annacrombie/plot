@@ -109,28 +109,26 @@ static struct canvas_elem **plot_fill_canvas(struct plot *plot, long **norm)
 	return canvas;
 }
 
-static char *yl_fmt_l = "%%%d.%df %%s";
-static char *yl_fmt_r = "%%s %%-%d.%df";
+static char *yl_l_fmt_fmt = "%%%d.%df %%s";
+static char *yl_r_fmt_fmt = "%%s %%-%d.%df";
 
 static void plot_y_label_init_fmts(struct y_label *yl, int side)
 {
 	int chars;
-	char *dest, *src;
 
 	if (side == 1) {
-		dest = yl->l_fmt;
-		src = yl_fmt_l;
+		if (yl->l_fmt != NULL)
+			return;
+		chars = snprintf(NULL, 0, yl_l_fmt_fmt, yl->width, yl->prec) + 1;
+		yl->l_fmt = safe_calloc(chars, sizeof(char));
+		snprintf(yl->l_fmt, chars, yl_l_fmt_fmt, yl->width, yl->prec);
 	} else if (side == 2) {
-		dest = yl->r_fmt;
-		src = yl_fmt_r;
+		if (yl->r_fmt != NULL)
+			return;
+		chars = snprintf(NULL, 0, yl_r_fmt_fmt, yl->width, yl->prec) + 1;
+		yl->r_fmt = safe_calloc(chars, sizeof(char));
+		snprintf(yl->r_fmt, chars, yl_r_fmt_fmt, yl->width, yl->prec);
 	}
-
-	if (dest != NULL)
-		return;
-
-	chars = snprintf(NULL, 0, src, yl->width, yl->prec);
-	dest = safe_calloc(chars, sizeof(char));
-	snprintf(dest, chars, src, yl->width, yl->prec);
 }
 
 static void
@@ -160,7 +158,7 @@ plot_print_canvas(struct plot *plot, double *labels, struct canvas_elem **canvas
 	long x, y;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		if (plot->y_label->side & 1)
+		if ((plot->y_label->side & 1) == 1)
 			plot_print_y_label(plot, canvas[0][y], labels[y], 1);
 
 		for (x = 0; x < plot->width; x++) {
@@ -170,8 +168,8 @@ plot_print_canvas(struct plot *plot, double *labels, struct canvas_elem **canvas
 			printf("%s", plot_peices[canvas[x][y].peice]);
 		}
 
-		if (plot->y_label->side & 2)
-			plot_print_y_label(plot, canvas[0][y], labels[y], 1);
+		if ((plot->y_label->side & 2) == 2)
+			plot_print_y_label(plot, canvas[0][y], labels[y], 2);
 
 		printf("\n");
 	}
