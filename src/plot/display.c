@@ -65,11 +65,11 @@ static enum plot_peice next_peice(long y, long cur, long next)
 
 static void plot_write_norm(struct plot *plot, long *norm, struct canvas_elem **c)
 {
-	size_t x, y;
+	long x, y;
 	enum plot_peice next;
 
-	for (x = 2; x < norm[0] && x - 2 < plot->width; x++) {
-		for (y = 0; y < plot->height; y++) {
+	for (x = 2; x < norm[0] && x - 2 < (long)plot->width; x++) {
+		for (y = 0; y < (long)plot->height; y++) {
 			next = next_peice(
 				y,
 				norm[x],
@@ -161,7 +161,7 @@ plot_print_canvas(struct plot *plot, double *labels, struct canvas_elem **canvas
 		if ((plot->y_label->side & 1) == 1)
 			plot_print_y_label(plot, canvas[0][y], labels[y], 1);
 
-		for (x = 0; x < plot->width; x++) {
+		for (x = 0; x < (long)plot->width; x++) {
 			if (canvas[x][y].color > 0)
 				printf("\e[%dm", canvas[x][y].color);
 
@@ -200,7 +200,7 @@ static void plot_print_x_label(struct plot *p)
 
 	end = xl->start + p->width;
 	for (i = xl->start + tmp; i < end; i += xl->every) {
-		tmp = (i < 0 ? -1 : 1) * (xl->mod > 0 ? i % xl->mod : i);
+		tmp = (i < 0 ? -1 : 1) * (xl->mod > 0 ? i % (long)xl->mod : i);
 
 		if (tmp == 0 && xl->color > 0)
 			printf(fmt[1], xl->color, tmp);

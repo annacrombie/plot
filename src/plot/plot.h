@@ -32,7 +32,7 @@ struct x_label {
 	char *label;
 };
 
-struct plot *plot_init();
+struct plot *plot_init(void);
 void plot_add(struct plot *plot, size_t len, double *data, int color);
 void plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot, int free_data);

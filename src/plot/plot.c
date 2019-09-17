@@ -17,7 +17,7 @@ struct plot_bounds {
 	double min;
 };
 
-struct plot *plot_init()
+struct plot *plot_init(void)
 {
 	struct plot *plot;
 	struct x_label *xl;
@@ -126,7 +126,7 @@ static double *plot_make_labels(unsigned int height, struct plot_bounds *pb)
 
 static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 {
-	size_t i, j;
+	long int i, j;
 	long **normalized;
 
 	double ratio = (double)(p->height - 1) / (b->max - b->min);
