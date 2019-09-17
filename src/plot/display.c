@@ -184,6 +184,9 @@ static void plot_print_x_label(struct plot *p)
 	long end, tmp, i;
 	char fmt[2][20];
 
+	if (xl->every <= 0)
+		return;
+
 	snprintf(fmt[0], 20, "%%-%dld", xl->every);
 
 	if (xl->color > 0)
