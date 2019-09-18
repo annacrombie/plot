@@ -40,4 +40,23 @@ src = files([
 	'src/util.c'
 ])
 
-executable('plot', sources: src, dependencies : math_lib)
+executable('plot', sources: src, dependencies : math_lib, install : true)
+
+scdoc = dependency('scdoc', native: true, required: true, version: '>=1.9.0')
+scdoc_prog = find_program(scdoc.get_pkgconfig_variable('scdoc'), native: true)
+sh = find_program('sh', native: true)
+mandir = get_option('mandir')
+
+custom_target(
+	'plot.1',
+	input: 'docs/plot.1.scd',
+	output: 'plot.1',
+	command: [
+		sh, '-c', '@0@ < @INPUT@ > @1@'.format(
+			scdoc_prog.path(),
+			join_paths(meson.current_build_dir(), 'plot.1'))
+	],
+	install: true,
+	install_dir: '@0@/man@1@'.format(mandir, 1)
+)
+
