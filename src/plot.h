@@ -45,5 +45,4 @@ void plot_add(struct plot *plot, FILE *f, int color);
 void plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot, int free_data);
 void plot_prepare(struct plot *p);
-int plot_read_num(struct plot *p, int shift);
 #endif

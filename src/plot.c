@@ -1,7 +1,6 @@
 #include <float.h>
 #include <math.h>
 #include <string.h>
-
 #include "util.h"
 #include "input.h"
 #include "plot.h"
@@ -89,68 +88,6 @@ void plot_prepare(struct plot *p)
 		p->data[i]->data = safe_calloc(p->width, sizeof(double));
 }
 
-int plot_read_num(struct plot *p, int shift)
-{
-	size_t i, len;
-	int ret = 0;
-	double *arr;
-
-	struct plot_data *pd;
-
-	arr = NULL;
-
-	for (i = 0; i < p->datasets; i++) {
-		pd = p->data[i];
-
-		if (!shift && pd->len >= p->width)
-			continue;
-
-		len = read_numbers(pd->src, &arr);
-
-		if (len == 0) {
-			free(arr);
-			continue;
-		}
-
-		if (len >= p->width) {
-			if (shift) {
-				shift = len - p->width;
-				memcpy(pd->data, &arr[shift], p->width * sizeof(double));
-			} else {
-				memcpy(pd->data, arr, p->width * sizeof(double));
-			}
-
-			pd->len = p->width;
-			free(arr);
-			continue;
-		}
-
-		if (len + pd->len > p->width) {
-			if (shift) {
-				shift = p->width - pd->len + len;
-				pd->data = memmove(
-					pd->data,
-					pd->data + shift,
-					sizeof(double) * (pd->len - shift)
-					);
-
-				pd->len = pd->len - shift;
-			} else {
-				len = p->width - pd->len;
-			}
-		}
-
-		memcpy(&pd->data[pd->len], arr, len * sizeof(double));
-		pd->len += len;
-
-		free(arr);
-
-		ret = 1;
-	}
-
-	return ret;
-}
-
 static struct plot_bounds *
 plot_data_get_bounds(size_t len, struct plot_data **pda)
 {
@@ -214,7 +151,6 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 	}
 
 	return normalized;
-
 }
 
 void plot_plot(struct plot *plot)

@@ -7,6 +7,7 @@
 #include <string.h>
 #include "plot.h"
 #include "util.h"
+#include "input.h"
 
 #define MAXWIDTH 1000
 #define MAXHEIGHT 1000
@@ -194,7 +195,7 @@ static void follow_plot(struct plot *p)
 	printf("%c[?25l", 27);
 
 	while (1) {
-		if (!plot_read_num(p, 1)) {
+		if (!pdtry_all_buffers(p, 1)) {
 			if (poll(pfds, nfds, -1) < 1)
 				return;
 
@@ -202,7 +203,7 @@ static void follow_plot(struct plot *p)
 				if (pfds[i].revents & POLLIN && feof(p->data[i]->src))
 					clearerr(p->data[i]->src);
 
-			if (!plot_read_num(p, 1)) {
+			if (!pdtry_all_buffers(p, 1)) {
 				nanosleep(&sleep, NULL);
 				continue;
 			}
@@ -232,6 +233,7 @@ int main(int argc, char **argv)
 		add_data_from_file("-", p, lc);
 
 	plot_prepare(p);
+	input_init();
 
 	if (p->follow) {
 		sigact.sa_flags = 0;
@@ -239,11 +241,12 @@ int main(int argc, char **argv)
 		sigaction(SIGINT, &sigact, NULL);
 		follow_plot(p);
 	} else {
-		while (plot_read_num(p, 0));
+		pdread_all_available(p);
 
 		plot_plot(p);
 	}
 
+	input_cleanup();
 	plot_destroy(p, 1);
 
 	return 0;
