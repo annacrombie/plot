@@ -1,4 +1,4 @@
-#include "../util.h"
+#include "util.h"
 #include "plot.h"
 
 /* A peice can be defined by the four sides it touches of the cell it contains.

@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <poll.h>
 #include <string.h>
-#include "plot/plot.h"
+#include "plot.h"
 #include "util.h"
 
 #define MAXWIDTH 1000

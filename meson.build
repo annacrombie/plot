@@ -34,9 +34,9 @@ add_project_arguments(cc.get_supported_arguments([
 math_lib = cc.find_library('m', required : true)
 src = files([
 	'src/cli.c',
-	'src/plot/display.c',
-	'src/plot/plot.c',
+	'src/display.c',
 	'src/input.c',
+	'src/plot.c',
 	'src/util.c'
 ])
 

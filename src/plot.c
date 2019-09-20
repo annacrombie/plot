@@ -2,8 +2,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "../util.h"
-#include "../input.h"
+#include "util.h"
+#include "input.h"
 #include "plot.h"
 #include "display.h"
 
