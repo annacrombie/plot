@@ -24,6 +24,18 @@ void *safe_calloc(size_t nmemb, size_t size)
 	return p;
 }
 
+void *safe_realloc(void *p, size_t size)
+{
+	void *np;
+
+	if ((np = realloc(p, size)) == NULL) {
+		fprintf(stderr, "out of memory\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return np;
+}
+
 int is_digit(char c)
 {
 	switch (c) {

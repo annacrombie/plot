@@ -2,15 +2,9 @@
 #include <math.h>
 
 #include "../util.h"
+#include "../read_arr.h"
 #include "plot.h"
 #include "display.h"
-
-struct plot_data {
-	double *data;
-	size_t len;
-	struct plot_data *next;
-	unsigned int color;
-};
 
 struct plot_bounds {
 	double max;
@@ -38,7 +32,6 @@ struct plot *plot_init(void)
 	yl->l_fmt = NULL;
 
 	plot = safe_malloc(sizeof(struct plot));
-
 	plot->data = NULL;
 	plot->height = 24;
 	plot->width = 80;
@@ -52,58 +45,131 @@ struct plot *plot_init(void)
 	return plot;
 }
 
-static struct plot_data *plot_data_init(size_t len, double *data, int color)
+static struct plot_data *plot_data_init(FILE *src, int color)
 {
 	struct plot_data *pd;
 
 	pd = safe_malloc(sizeof(struct plot_data));
 
-	pd->len = len;
-	pd->data = data;
-	pd->next = NULL;
+	pd->src = src;
+	pd->len = 0;
+	pd->data = NULL;
 	pd->color = color;
 
 	return pd;
 }
 
-void plot_add(struct plot *plot, size_t len, double *data, int color)
+void plot_add(struct plot *plot, FILE *f, int color)
 {
-	struct plot_data *d = plot->data;
+	size_t len;
 
 	if (color != 0)
 		plot->color = 1;
 
-	if (d == NULL) {
-		plot->data = plot_data_init(len, data, color);
-	} else {
-		while (d->next != NULL)
-			d = d->next;
-
-		d->next = plot_data_init(len, data, color);
+	if (plot->data == NULL) {
+		plot->data = safe_calloc(1, sizeof(struct plot_data *));
+		plot->data[0] = plot_data_init(f, color);
+		plot->datasets = 1;
+		return;
 	}
 
+	len = plot->datasets + 1;
+
+	plot->data = safe_realloc(plot->data, len * sizeof(struct plot_data *));
+	plot->data[len - 1] = plot_data_init(f, color);
 	plot->datasets++;
 }
 
-static struct plot_bounds *plot_data_get_bounds(struct plot_data *data)
+void plot_prepare(struct plot *p)
 {
 	size_t i;
+
+	for (i = 0; i < p->datasets; i++)
+		p->data[i]->data = safe_calloc(p->width, sizeof(double));
+}
+
+int plot_read_num(struct plot *p, int shift)
+{
+	size_t i, len;
+	int ret = 0;
+	double *arr;
+
+	struct plot_data *pd;
+
+	arr = NULL;
+
+	for (i = 0; i < p->datasets; i++) {
+		pd = p->data[i];
+
+		if (!shift && pd->len >= p->width)
+			continue;
+
+		len = read_numbers(pd->src, &arr);
+
+		if (len == 0) {
+			free(arr);
+			continue;
+		}
+
+		if (len >= p->width) {
+			if (shift) {
+				shift = len - p->width;
+				memcpy(pd->data, &arr[shift], p->width * sizeof(double));
+			} else {
+				memcpy(pd->data, arr, p->width * sizeof(double));
+			}
+
+			pd->len = p->width;
+			free(arr);
+			continue;
+		}
+
+		if (len + pd->len > p->width) {
+			if (shift) {
+				shift = p->width - pd->len + len;
+				pd->data = memmove(
+					pd->data,
+					pd->data + shift,
+					sizeof(double) * (pd->len - shift)
+					);
+
+				pd->len = pd->len - shift;
+			} else {
+				len = p->width - pd->len;
+			}
+		}
+
+		memcpy(&pd->data[pd->len], arr, len * sizeof(double));
+		pd->len += len;
+
+		free(arr);
+
+		ret = 1;
+	}
+
+	return ret;
+}
+
+static struct plot_bounds *
+plot_data_get_bounds(size_t len, struct plot_data **pda)
+{
+	size_t i, j;
 	struct plot_bounds *bounds;
+	struct plot_data *data;
 
 	bounds = safe_malloc(sizeof(struct plot_bounds));
 
 	bounds->max = DBL_MIN;
 	bounds->min = DBL_MAX;
 
-	while (data != NULL) {
+	for (j = 0; j < len; j++) {
+		data = pda[j];
 		for (i = 0; i < data->len; i++) {
 			if (data->data[i] > bounds->max)
 				bounds->max = data->data[i];
 			if (data->data[i] < bounds->min)
 				bounds->min = data->data[i];
 		}
-
-		data = data->next;
 	}
 
 	return bounds;
@@ -131,21 +197,19 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 	double ratio = (double)(p->height - 1) / (b->max - b->min);
 
-	struct plot_data *d = p->data;
+	struct plot_data *d;
 
 	normalized = safe_calloc(p->datasets, sizeof(long *));
 
-	j = 0;
-	while (d != NULL) {
+	for (j = 0; j < p->datasets; j++) {
+		d = p->data[j];
+
 		normalized[j] = safe_calloc(d->len + 2, sizeof(long));
 
 		normalized[j][0] = d->len + 2;
 		normalized[j][1] = d->color;
 		for (i = 2; i < normalized[j][0]; i++)
 			normalized[j][i] = lround((d->data[i - 2] - b->min) * ratio);
-
-		d = d->next;
-		j++;
 	}
 
 	return normalized;
@@ -160,7 +224,7 @@ void plot_plot(struct plot *plot)
 		return;
 
 	/* Determine the max and min of the array*/
-	struct plot_bounds *bounds = plot_data_get_bounds(plot->data);
+	struct plot_bounds *bounds = plot_data_get_bounds(plot->datasets, plot->data);
 
 	/* Create the labels for the graph */
 	double *y_labels = plot_make_labels(plot->height, bounds);
@@ -181,17 +245,20 @@ void plot_plot(struct plot *plot)
 
 void plot_destroy(struct plot *plot, int free_data)
 {
-	struct plot_data *d, *e;
+	size_t i;
 
-	d = plot->data;
-
-	while (d != NULL) {
-		e = d->next;
+	for (i = 0; i < plot->datasets; i++) {
 		if (free_data)
-			free(d->data);
-		free(d);
-		d = e;
+			free(plot->data[i]->data);
+
+		if (plot->data[i]->src != NULL)
+			fclose(plot->data[i]->src);
+
+		free(plot->data[i]);
 	}
+
+	if (plot->data != NULL)
+		free(plot->data);
 
 	free(plot->x_label);
 

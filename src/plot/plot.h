@@ -1,13 +1,14 @@
 #ifndef _PLOT_H_
 #define _PLOT_H_
 #define PLOT_VERSION "0.2.0"
+#include <stdio.h>
 #include <stdlib.h>
 
 struct plot {
-	struct plot_data *data;
+	struct plot_data **data;
+	size_t datasets;
 	unsigned int height;
 	unsigned int width;
-	size_t datasets;
 	int color;
 	int follow;
 	int merge_plot_peices;
@@ -32,8 +33,17 @@ struct x_label {
 	char *label;
 };
 
+struct plot_data {
+	double *data;
+	size_t len;
+	unsigned int color;
+	FILE *src;
+};
+
 struct plot *plot_init(void);
-void plot_add(struct plot *plot, size_t len, double *data, int color);
+void plot_add(struct plot *plot, FILE *f, int color);
 void plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot, int free_data);
+void plot_prepare(struct plot *p);
+int plot_read_num(struct plot *p, int shift);
 #endif

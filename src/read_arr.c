@@ -1,51 +1,50 @@
 #include "read_arr.h"
 
-#define MAX_NUM_LEN 20
+#define BUFFER_SIZE 64
+#define ARR_GROW 8
 
-size_t read_arr(FILE *f, double **arr, size_t maxlen)
+static char *bufp = NULL;
+static long leftovers = 0;
+
+int read_numbers(FILE *f, double **dest)
 {
-	size_t len;
-	long num;
+	char *endptr = NULL;
+	size_t i, read;
+	long len, cap, lr;
+	double *arr;
 
+	if (bufp == NULL)
+		bufp = safe_calloc(BUFFER_SIZE, sizeof(char));
+
+	arr = safe_calloc(ARR_GROW, sizeof(double));
+	cap = ARR_GROW;
 	len = 0;
-	*arr = safe_calloc(maxlen, sizeof(double));
 
-	while (read_next_num(f, &num)) {
-		(*arr)[len] = num;
-		len++;
+	read = fread(&bufp[leftovers], sizeof(char), BUFFER_SIZE - leftovers, f);
+	read += leftovers;
 
-		if (len == maxlen)
-			return maxlen;
-	}
+	for (i = 0; i < read; i++) {
+		if (!is_digit(bufp[i]) || (endptr != NULL && &bufp[i] < endptr))
+			continue;
 
-	return len;
-}
+		lr = i;
+		arr[len] = strtod(&bufp[i], &endptr);
+		(len)++;
 
-int read_next_num(FILE *f, long *num)
-{
-	char numbuf[MAX_NUM_LEN + 1] = "";
-	char buf[] = "\0";
-	size_t numbuf_i;
-	int reading_digit = 0;
-
-	numbuf_i = 0;
-
-	while (fread(buf, 1, sizeof(char), f) != 0) {
-		if (is_digit(*buf)) {
-			reading_digit = 1;
-			if (numbuf_i == MAX_NUM_LEN - 1) {
-				fprintf(stderr, "number too long\n");
-				exit(EXIT_FAILURE);
-			}
-
-			numbuf[numbuf_i] = *buf;
-			numbuf[numbuf_i + 1] = '\0';
-			numbuf_i++;
-		} else if (reading_digit) {
-			*num = strtod(numbuf, NULL);
-			return 1;
+		if (len >= cap) {
+			cap += ARR_GROW;
+			arr = safe_realloc(arr, sizeof(double) * cap);
 		}
 	}
 
-	return 0;
+	if (!feof(f) && endptr >= &bufp[read - 1]) {
+		leftovers = read - lr;
+		bufp = memmove(bufp, &bufp[lr], sizeof(char) * leftovers);
+		len--;
+	} else {
+		leftovers = 0;
+	}
+
+	*dest = arr;
+	return len;
 }
