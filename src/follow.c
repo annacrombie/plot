@@ -21,8 +21,8 @@ void follow_plot(struct plot *p)
 	while (1) {
 		if (!pdtry_all_buffers(p, 1)) {
 			for (i = 0; i < p->datasets; i++)
-				if (feof(p->data[i]->src))
-					clearerr(p->data[i]->src);
+				if (feof(p->data[i]->src->src))
+					clearerr(p->data[i]->src->src);
 
 			nanosleep(&sleep, NULL);
 			continue;

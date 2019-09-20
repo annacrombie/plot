@@ -37,7 +37,7 @@ struct plot_data {
 	double *data;
 	size_t len;
 	unsigned int color;
-	FILE *src;
+	struct input *src;
 };
 
 struct plot *plot_init(void);

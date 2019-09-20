@@ -48,10 +48,17 @@ struct plot *plot_init(void)
 static struct plot_data *plot_data_init(FILE *src, int color)
 {
 	struct plot_data *pd;
+	struct input *in;
 
 	pd = safe_malloc(sizeof(struct plot_data));
+	in = safe_malloc(sizeof(struct input));
 
-	pd->src = src;
+	in->src = src;
+	in->buf = NULL;
+	in->rem = 0;
+	in->size = 0;
+
+	pd->src = in;
 	pd->len = 0;
 	pd->data = NULL;
 	pd->color = color;
@@ -189,8 +196,10 @@ void plot_destroy(struct plot *plot, int free_data)
 			free(plot->data[i]->data);
 
 		if (plot->data[i]->src != NULL)
-			fclose(plot->data[i]->src);
+			fclose(plot->data[i]->src->src);
 
+		free(plot->data[i]->src->buf);
+		free(plot->data[i]->src);
 		free(plot->data[i]);
 	}
 

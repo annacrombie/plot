@@ -2,64 +2,65 @@
 #include <string.h>
 #include "util.h"
 #include "plot.h"
+#include "input.h"
 
-#define BUFFER_SIZE 256
+#define DEF_BUFFER_SIZE 256
+#define TMP_ARR_SIZE 64
 
-static char *bufp = NULL;
-static size_t leftovers = 0;
 static double *tmp_arr = NULL;
-static size_t buffer_size;
+static size_t buf_ini_size;
 
 void input_init(void)
 {
-	buffer_size = BUFFER_SIZE;
-	bufp = safe_calloc(buffer_size, sizeof(char));
-	tmp_arr = safe_calloc(BUFFER_SIZE, sizeof(double));
-	leftovers = 0;
+	buf_ini_size = DEF_BUFFER_SIZE;
+	tmp_arr = safe_calloc(TMP_ARR_SIZE, sizeof(double));
 }
 
 void set_input_buffer_size(size_t new_size)
 {
-	if (new_size < 0)
-		return;
-
-	buffer_size = new_size;
-	bufp = safe_realloc(bufp, sizeof(char) * buffer_size);
+	buf_ini_size = new_size;
 }
 
 void input_cleanup(void)
 {
-	free(bufp);
 	free(tmp_arr);
 }
 
-static int read_numbers(FILE *f, double **dest)
+static int read_numbers(struct input *in, double **dest, size_t max)
 {
 	char *endptr = NULL;
 	size_t i, read;
-	long len = 0, lr;
+	size_t len = 0, lr;
 
-	if (leftovers >= buffer_size)
-		set_input_buffer_size(buffer_size + leftovers);
+	if (in->buf == NULL) {
+		in->size = buf_ini_size;
+		in->buf = safe_calloc(in->size, sizeof(char));
+	} else if (in->rem >= in->size) {
+		in->size += in->rem;
+		in->buf = safe_realloc(in->buf, sizeof(char) * in->size);
+	}
 
-	read = fread(&bufp[leftovers], sizeof(char), buffer_size - leftovers, f);
-	read += leftovers;
+	read = fread(&in->buf[in->rem], sizeof(char), in->size - in->rem, in->src);
+	read += in->rem;
 
 	for (i = 0; i < read; i++) {
-		if (!is_digit(bufp[i]) || (endptr != NULL && &bufp[i] < endptr))
+		if (!is_digit(in->buf[i]) || (endptr != NULL && &in->buf[i] < endptr))
 			continue;
 
 		lr = i;
-		tmp_arr[len] = strtod(&bufp[i], &endptr);
+		tmp_arr[len] = strtod(&in->buf[i], &endptr);
 		(len)++;
+
+		if (len == max)
+			break;
 	}
 
-	if (!feof(f) && endptr >= &bufp[read - 1]) {
-		leftovers = read - lr;
-		bufp = memmove(bufp, &bufp[lr], sizeof(char) * leftovers);
+	if (!feof(in->src) && endptr >= &in->buf[i - 1]) {
+		in->rem = read - lr;
+		in->buf = memmove(in->buf, &in->buf[lr], sizeof(char) * in->rem);
 		len--;
 	} else {
-		leftovers = 0;
+		in->rem = 0;
 	}
 
 	*dest = tmp_arr;
@@ -79,7 +80,7 @@ int pdtry_buffer(struct plot_data *pd, size_t max_w, int shift)
 	if (!shift && pd->len >= max_w)
 		return 0;
 
-	if ((len = read_numbers(pd->src, &arr)) == 0)
+	if ((len = read_numbers(pd->src, &arr, TMP_ARR_SIZE)) == 0)
 		return 0;
 
 	if (len >= max_w) {
@@ -104,7 +105,11 @@ int pdtry_buffer(struct plot_data *pd, size_t max_w, int shift)
 		}
 	}
 
-	memcpy(&pd->data[pd->len], arr, len * sizeof(double));
+	size_t i;
+	for (i = 0; i < len; i++)
+		printf("  %11.2f\n", arr[i]);
+
+	memcpy(&pd->data[pd->len], arr, sizeof(double) * len);
 	pd->len += len;
 	return 1;
 }
