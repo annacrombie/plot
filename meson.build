@@ -36,7 +36,7 @@ src = files([
 	'src/cli.c',
 	'src/plot/display.c',
 	'src/plot/plot.c',
-	'src/read_arr.c',
+	'src/input.c',
 	'src/util.c'
 ])
 

@@ -1,8 +1,9 @@
 #include <float.h>
 #include <math.h>
+#include <string.h>
 
 #include "../util.h"
-#include "../read_arr.h"
+#include "../input.h"
 #include "plot.h"
 #include "display.h"
 

@@ -1,4 +1,7 @@
-#include "read_arr.h"
+#include <stdio.h>
+#include <string.h>
+#include "util.h"
+#include "input.h"
 
 #define BUFFER_SIZE 64
 #define ARR_GROW 8

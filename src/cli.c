@@ -4,8 +4,9 @@
 #include <getopt.h>
 #include <signal.h>
 #include <poll.h>
+#include <string.h>
 #include "plot/plot.h"
-#include "read_arr.h"
+#include "util.h"
 
 #define MAXWIDTH 1000
 #define MAXHEIGHT 1000
