@@ -105,10 +105,6 @@ int pdtry_buffer(struct plot_data *pd, size_t max_w, int shift)
 		}
 	}
 
-	size_t i;
-	for (i = 0; i < len; i++)
-		printf("  %11.2f\n", arr[i]);
-
 	memcpy(&pd->data[pd->len], arr, sizeof(double) * len);
 	pd->len += len;
 	return 1;
