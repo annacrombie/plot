@@ -4,7 +4,6 @@
 #include "plot.h"
 
 #define BUFFER_SIZE 64
-#define ARR_GROW 8
 
 static char *bufp = NULL;
 static long leftovers = 0;
