@@ -137,7 +137,7 @@ static double *plot_make_labels(unsigned int height, struct plot_bounds *pb)
 
 static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 {
-	long int i, j;
+	size_t i, j;
 	long **normalized;
 
 	double ratio = (double)(p->height - 1) / (b->max - b->min);
@@ -153,7 +153,7 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 
 		normalized[j][0] = d->len + 2;
 		normalized[j][1] = d->color;
-		for (i = 2; i < normalized[j][0]; i++)
+		for (i = 2; i < (size_t)normalized[j][0]; i++)
 			normalized[j][i] = lround((d->data[i - 2] - b->min) * ratio);
 	}
 
