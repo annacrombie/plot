@@ -3,17 +3,28 @@
 #include "util.h"
 #include "plot.h"
 
-#define BUFFER_SIZE 64
+#define BUFFER_SIZE 256
 
 static char *bufp = NULL;
-static long leftovers = 0;
+static size_t leftovers = 0;
 static double *tmp_arr = NULL;
+static size_t buffer_size;
 
 void input_init(void)
 {
-	bufp = safe_calloc(BUFFER_SIZE, sizeof(char));
+	buffer_size = BUFFER_SIZE;
+	bufp = safe_calloc(buffer_size, sizeof(char));
 	tmp_arr = safe_calloc(BUFFER_SIZE, sizeof(double));
 	leftovers = 0;
+}
+
+void set_input_buffer_size(size_t new_size)
+{
+	if (new_size < 0)
+		return;
+
+	buffer_size = new_size;
+	bufp = safe_realloc(bufp, sizeof(char) * buffer_size);
 }
 
 void input_cleanup(void)
@@ -28,7 +39,10 @@ static int read_numbers(FILE *f, double **dest)
 	size_t i, read;
 	long len = 0, lr;
 
-	read = fread(&bufp[leftovers], sizeof(char), BUFFER_SIZE - leftovers, f);
+	if (leftovers >= buffer_size)
+		set_input_buffer_size(buffer_size + leftovers);
+
+	read = fread(&bufp[leftovers], sizeof(char), buffer_size - leftovers, f);
 	read += leftovers;
 
 	for (i = 0; i < read; i++) {

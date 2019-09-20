@@ -1,13 +1,8 @@
-#define _POSIX_C_SOURCE 199309L
-
-#include <time.h>
+#include <stdio.h>
 #include <getopt.h>
-#include <signal.h>
-#include <poll.h>
 #include <string.h>
 #include "plot.h"
 #include "util.h"
-#include "input.h"
 
 #define MAXWIDTH 1000
 #define MAXHEIGHT 1000
@@ -127,14 +122,9 @@ static void add_data_from_file(char *filename, struct plot *p, int color)
 	}
 
 	plot_add(p, f, color);
-	/*
-	   len = read_arr(f, &arr, p->width);
-	   if (len >= 1)
-	        plot_add(p, len, arr, color);
-	 */
 }
 
-static int parse_opts(struct plot *p, int argc, char **argv)
+int parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
 	int lc = 0;
@@ -175,79 +165,3 @@ static int parse_opts(struct plot *p, int argc, char **argv)
 	return lc;
 }
 
-static void follow_plot(struct plot *p)
-{
-	size_t i;
-	long height = p->height + (p->x_label->every > 0 ? 1 : 0);
-	struct pollfd *pfds = safe_calloc(p->datasets, sizeof(struct pollfd));
-	nfds_t nfds = p->datasets;
-
-	struct timespec sleep = {
-		.tv_sec = 0,
-		.tv_nsec = 500,
-	};
-
-	for (i = 0; i < p->datasets; i++) {
-		pfds[i].fd = fileno(p->data[i]->src);
-		pfds[i].events = POLLIN;
-	}
-
-	printf("%c[?25l", 27);
-
-	while (1) {
-		if (!pdtry_all_buffers(p, 1)) {
-			if (poll(pfds, nfds, -1) < 1)
-				return;
-
-			for (i = 0; i < p->datasets; i++)
-				if (pfds[i].revents & POLLIN && feof(p->data[i]->src))
-					clearerr(p->data[i]->src);
-
-			if (!pdtry_all_buffers(p, 1)) {
-				nanosleep(&sleep, NULL);
-				continue;
-			}
-		}
-
-		plot_plot(p);
-		printf("%c[%ldA", 27, height);
-	}
-
-	printf("%c[%ldB%c[?12l%c[?25h", 27, height, 27, 27);
-}
-
-static void handle_sigint(int _)
-{
-	printf("%c[?12l%c[?25h", 27, 27);
-	exit(EXIT_FAILURE);
-}
-
-int main(int argc, char **argv)
-{
-	struct sigaction sigact;
-	struct plot *p = plot_init();
-
-	int lc = parse_opts(p, argc, argv);
-
-	if (p->datasets == 0)
-		add_data_from_file("-", p, lc);
-
-	plot_prepare(p);
-	input_init();
-
-	if (p->follow) {
-		sigact.sa_flags = 0;
-		sigact.sa_handler = handle_sigint;
-		sigaction(SIGINT, &sigact, NULL);
-		follow_plot(p);
-	} else {
-		pdread_all_available(p);
-
-		plot_plot(p);
-	}
-
-	input_cleanup();
-	plot_destroy(p, 1);
-
-	return 0;
-}

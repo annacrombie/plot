@@ -33,10 +33,12 @@ add_project_arguments(cc.get_supported_arguments([
 
 math_lib = cc.find_library('m', required : true)
 src = files([
-	'src/cli.c',
+	'src/main.c',
 	'src/display.c',
 	'src/input.c',
 	'src/plot.c',
+	'src/follow.c',
+	'src/opts.c',
 	'src/util.c'
 ])
 

@@ -7,4 +7,5 @@ int pdtry_all_buffers(struct plot *p, int shift);
 int pdtry_buffer(struct plot_data *pd, long max_w, int shift);
 void input_cleanup(void);
 void input_init(void);
+void set_input_buffer_size(size_t new_size);
 #endif
