@@ -117,6 +117,9 @@ plot_data_get_bounds(size_t len, struct plot_data **pda)
 		}
 	}
 
+	if ((bounds->max - bounds->min) < 0.00001)
+		bounds->max += 10;
+
 	return bounds;
 }
 
