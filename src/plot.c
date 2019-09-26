@@ -6,6 +6,8 @@
 #include "plot.h"
 #include "display.h"
 
+#define PLOT_DEFAULT_BOUND 8
+
 struct plot_bounds {
 	double max;
 	double min;
@@ -118,7 +120,7 @@ plot_data_get_bounds(size_t len, struct plot_data **pda)
 	}
 
 	if ((bounds->max - bounds->min) < 0.00001)
-		bounds->max += 10;
+		bounds->max += PLOT_DEFAULT_BOUND;
 
 	return bounds;
 }
