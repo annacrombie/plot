@@ -106,7 +106,7 @@ plot_data_get_bounds(size_t len, struct plot_data **pda)
 
 	bounds = safe_malloc(sizeof(struct plot_bounds));
 
-	bounds->max = DBL_MIN;
+	bounds->max = -1 * DBL_MAX;
 	bounds->min = DBL_MAX;
 
 	for (j = 0; j < len; j++) {
@@ -119,7 +119,7 @@ plot_data_get_bounds(size_t len, struct plot_data **pda)
 		}
 	}
 
-	if ((bounds->max - bounds->min) < 0.00001)
+	if (bounds->max == bounds->min)
 		bounds->max += PLOT_DEFAULT_BOUND;
 
 	return bounds;
