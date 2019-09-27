@@ -168,9 +168,18 @@ static long **plot_normalize_data(struct plot *p, struct plot_bounds *b)
 void plot_plot(struct plot *plot)
 {
 	size_t i;
+	int no_data = 1;
 
-	if (plot->datasets < 1)
+	for (i = 0; i < plot->datasets; i++)
+		if (plot->data[i]->len > 0) {
+			no_data = 0;
+			break;
+		}
+
+	if (plot->datasets < 1 || no_data) {
+		fprintf(stderr, "no data\n");
 		return;
+	}
 
 	/* Determine the max and min of the array*/
 	struct plot_bounds *bounds = plot_data_get_bounds(plot->datasets, plot->data);
