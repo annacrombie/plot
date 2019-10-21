@@ -22,10 +22,49 @@
  * ┼     | 1111   | f
  */
 
-static char plot_peices[][4] = {
-	" ", " ", " ", "╭", " ", "│", "╰", "├",
-	" ", "╮", "─", "┬", "╯", "┤", "┴", "┼",
+#define _X_ "x"
+
+/*
+   " ╔║╚╠╗═╦╝╣╩╬"
+   " ╭│╰├╮─┬╯┤┴┼"
+ */
+
+
+static char plot_charsets[][16][4] = {
+	{
+		" ", _X_, _X_, "╭", _X_, "│", "╰", "├",
+		_X_, "╮", "─", "┬", "╯", "┤", "┴", "┼",
+	},
+	{
+		" ", _X_, _X_, ".", _X_, "|", "`", "|",
+		_X_, ",", "-", "?", "'", "|", "?", "+",
+	},
+	{
+		"?", _X_, _X_, "?", _X_, "?", "?", "?",
+		_X_, "?", "?", "?", "?", "?", "?", "?",
+	}
 };
+
+void set_custom_plot_charset(char *str, size_t len)
+{
+	size_t i, j, k;
+	unsigned int bytes;
+
+	for (i = j = 0; i < 16; i++) {
+		if (i == 1 || i == 2 || i == 4 || i == 8)
+			continue;
+
+		bytes = utf8_bytes(&str[j]);
+
+		if (bytes + j > len)
+			return;
+
+		for (k = 0; k < bytes; k++)
+			plot_charsets[PCCUSTOM][i][k] = str[j + k];
+
+		j += k;
+	}
+}
 
 enum plot_peice {
 	PPBlank     = 0x0,
@@ -147,9 +186,9 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 		printf("%c[0m", 27);
 
 	if (side == 1)
-		printf(yl->l_fmt, l, plot_peices[pp]);
+		printf(yl->l_fmt, l, plot_charsets[p->charset][pp]);
 	else if (side == 2)
-		printf(yl->r_fmt, plot_peices[pp], l);
+		printf(yl->r_fmt, plot_charsets[p->charset][pp], l);
 }
 
 static void
@@ -165,7 +204,10 @@ plot_print_canvas(struct plot *plot, double *labels, struct canvas_elem **canvas
 			if (canvas[x][y].color > 0)
 				printf("\e[%dm", canvas[x][y].color);
 
-			printf("%s", plot_peices[canvas[x][y].peice]);
+			printf("%s", plot_charsets[plot->charset][canvas[x][y].peice]);
+
+			if (canvas[x][y].color > 0)
+				printf("\e[%dm", 0);
 		}
 
 		if ((plot->y_label->side & 2) == 2)
@@ -214,6 +256,8 @@ static void plot_print_x_label(struct plot *p)
 void plot_display(struct plot *plot, double *labels, long **norm)
 {
 	size_t i;
+
+	printf("%d\n", plot->charset);
 
 	/* create the graph */
 	struct canvas_elem **canvas = plot_fill_canvas(plot, norm);

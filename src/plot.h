@@ -4,8 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum plot_charset {
+	PCUNICODE = 0,
+	PCASCII = 1,
+	PCCUSTOM = 2
+};
+
 struct plot {
 	struct plot_data **data;
+	enum plot_charset charset;
 	size_t datasets;
 	unsigned int height;
 	unsigned int width;

@@ -34,6 +34,7 @@ struct plot *plot_init(void)
 	yl->l_fmt = NULL;
 
 	plot = safe_malloc(sizeof(struct plot));
+	plot->charset = PCUNICODE;
 	plot->data = NULL;
 	plot->height = 24;
 	plot->width = 80;
