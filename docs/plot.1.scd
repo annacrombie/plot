@@ -61,6 +61,15 @@ plot reads sequences of numbers and outputs a line graph.
 *-c* <color>
 	color of next data source.  see *COLORS*
 
+*-s* %<charset> | ascii | unicode
+	set the output charset.  The default is unicode.  ascii uses only ascii
+	characters.  Finally, you can specify a custom charset by passing an
+	argument in the form of %CHARSET where CHARSET is a string containing
+	12 utf8 codepoints.  For example, to get the default unicode charset
+	you instead pass *-s* " ╭│╰├╮─┬╯┤┴┼".  Here's another example:
+	" ╔║╚╠╗═╦╝╣╩╬".  If you pass an insufficient number of codepoints, the
+	missing ones will show up as '?'.
+
 *-f*
 	"follow" input. Basically what this does is print out the entire plot
 	every time a number is read.  Additionally, when the length of the
