@@ -17,7 +17,7 @@ plot reads sequences of numbers and outputs a line graph.
 *-i* <filename> | -
 	add filename (or stdin) as a data source.  see *INPUT*
 
-*-d* [width]:[height]
+*-d* [height]:[width]
 	set plot dimensions (not including axis labels)
 
 *-x* [every]:[offset]:[mod]:[side]:[color]
@@ -48,7 +48,9 @@ plot reads sequences of numbers and outputs a line graph.
 	set y label format
 
 	*width* - the width of the label
+
 	*prec* - the precision of the label
+
 	*side* - specify label position
 		- *1* put y label on the left
 		- *2* put y label on the right
@@ -76,8 +78,6 @@ plot reads sequences of numbers and outputs a line graph.
 	array of read numbers reaches the plot's width, it shifts everything
 	over to the left before adding the new number so that the plot will
 	scroll as more data is added.
-
-	Currently only works with stdin as a data source.
 *-h*
 	Show usage
 
