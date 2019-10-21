@@ -130,8 +130,6 @@ static enum plot_charset set_charset(char *charset)
 {
 	size_t len;
 
-	printf("setting charset to '%s'\n", charset);
-
 	if (charset[0] != '%') {
 		if (strcmp(charset, "unicode") == 0) {
 			return PCUNICODE;
@@ -171,7 +169,6 @@ int parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 's':
 			p->charset = set_charset(optarg);
-			printf("p->charset = %d\n", p->charset);
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);

@@ -257,8 +257,6 @@ void plot_display(struct plot *plot, double *labels, long **norm)
 {
 	size_t i;
 
-	printf("%d\n", plot->charset);
-
 	/* create the graph */
 	struct canvas_elem **canvas = plot_fill_canvas(plot, norm);
 
