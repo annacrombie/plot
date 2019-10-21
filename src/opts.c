@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <string.h>
 #include "plot.h"
+#include "display.h"
 #include "util.h"
 
 #define MAXWIDTH 1000
@@ -13,13 +14,14 @@ static void print_usage(FILE *f)
 		"plot " PLOT_VERSION "\n"
 		"usage: plot [opts]\n"
 		"opts\n"
-		"  -i [filename|-] - specify a data source\n"
+		"  -i <filename>|- - specify a data source\n"
 		"  -d [width]:[height] - set plot dimensions\n"
 		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
 		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"
 		"  -f - \"follow\" input, only works with stdin\n"
 		"  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴\n"
+		"  -s %%<charset>|ascii|unicode - set output charset\n"
 		"  -h - duh...\n"
 		"\n"
 		"colors: "
@@ -124,12 +126,35 @@ static void add_data_from_file(char *filename, struct plot *p, int color)
 	plot_add(p, f, color);
 }
 
+static enum plot_charset set_charset(char *charset)
+{
+	size_t len;
+
+	printf("setting charset to '%s'\n", charset);
+
+	if (charset[0] != '%') {
+		if (strcmp(charset, "unicode") == 0) {
+			return PCUNICODE;
+		} else if (strcmp(charset, "ascii") == 0) {
+			return PCASCII;
+		} else {
+			fprintf(stderr, "invalid charset '%s'\n", charset);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		len = strlen(charset) - 1;
+
+		set_custom_plot_charset(&charset[1], len);
+		return PCCUSTOM;
+	}
+}
+
 int parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:mx:y:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:ms:x:y:")) != -1) {
 		switch (opt) {
 		case 'd':
 			set_plot_dimensions(optarg, p);
@@ -143,6 +168,10 @@ int parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 'm':
 			p->merge_plot_peices = 1;
+			break;
+		case 's':
+			p->charset = set_charset(optarg);
+			printf("p->charset = %d\n", p->charset);
 			break;
 		case 'x':
 			set_x_label(optarg, p->x_label);
