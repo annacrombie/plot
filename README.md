@@ -40,23 +40,26 @@ $ cp build/plot /usr/local/bin/
 # Usage
 
 ```
-plot 0.2.0
+plot 0.3.0
 usage: plot [opts]
 opts
-  -i [filename|-] - add a data source
+  -i <filename>|- - specify a data source
+  -a <n> - average n inputs per data point
   -d [width]:[height] - set plot dimensions
   -x [every]:[offset]:[mod]:[side]:[color] - set x label format
   -y [width]:[prec]:[side] - set y label format
   -c <color> - set color of next data source
-  -f - "follow" input, only works with stdin
+  -f - "follow" input
+  -S <milliseconds> - follow rate
   -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴
+  -s %<charset>|ascii|unicode - set output charset
   -h - duh...
 
 colors: black, red, green, yellow, blue, magenta, cyan, white
 use capital character for bright variant
 
 ex.
-seq 1 99 | shuf | plot -cg
+seq 1 99 | shuf | plot -c g
 ```
 
 # Credits
