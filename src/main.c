@@ -16,7 +16,7 @@ main(int argc, char **argv)
 	}
 
 	if (p.follow) {
-		set_input_buffer_size(5);
+		set_input_buffer_size(8);
 		follow_plot(&p, p.follow_rate);
 	} else {
 		pdread_all_available(&p);

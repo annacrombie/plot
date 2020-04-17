@@ -7,14 +7,15 @@
 
 #define DEF_BUFFER_SIZE 256
 #define TMP_ARR_SIZE 64
+#define MAX_AHEAD 8
 
 static double tmp_arr[TMP_ARR_SIZE];
-static size_t buf_ini_size = DEF_BUFFER_SIZE;
+static size_t buf_size = DEF_BUFFER_SIZE;
 
 void
 set_input_buffer_size(size_t new_size)
 {
-	buf_ini_size = new_size;
+	buf_size = new_size;
 }
 
 static int
@@ -24,13 +25,11 @@ read_numbers(struct input *in, double **dest, size_t max)
 	size_t i, read;
 	size_t len = 0, lr;
 
-	if (in->size == 0) {
-		in->size = buf_ini_size;
-	} else if (in->rem >= in->size) {
-		in->size += in->rem;
+	if (in->rem >= buf_size) {
+		buf_size += in->rem;
 	}
 
-	read = fread(&in->buf[in->rem], sizeof(char), in->size - in->rem, in->src);
+	read = fread(&in->buf[in->rem], sizeof(char), buf_size - in->rem, in->src);
 	read += in->rem;
 
 	for (i = 0; i < read; i++) {
@@ -66,7 +65,7 @@ shift_arr(double *arr, size_t off, size_t amnt)
 }
 
 static int
-pdtry_buffer(struct plot_data *pd, size_t max_w, long *x_off, int shift)
+pdtry_buffer(struct plot_data *pd, size_t max_w, long *shifted, int shift)
 {
 	size_t len;
 	double *arr;
@@ -74,9 +73,7 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, long *x_off, int shift)
 
 	if (!shift && pd->len >= max_w) {
 		return 0;
-	}
-
-	if ((len = read_numbers(&pd->src, &arr, TMP_ARR_SIZE)) == 0) {
+	} else if ((len = read_numbers(&pd->src, &arr, TMP_ARR_SIZE)) == 0) {
 		return 0;
 	}
 
@@ -93,12 +90,9 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, long *x_off, int shift)
 
 	if (len + pd->len > max_w) {
 		if (shift) {
-			shift = max_w - pd->len + len;
-			*x_off += shift;
-			shift_arr(pd->data, shift, pd->len - shift);
-			pd->len = pd->len - shift;
-
-			shift = 1;
+			*shifted = shift = max_w - pd->len + len;
+			pd->len -= shift;
+			shift_arr(pd->data, shift, pd->len);
 		} else {
 			len = max_w - pd->len;
 		}
@@ -113,13 +107,49 @@ int
 pdtry_all_buffers(struct plot *p, int shift)
 {
 	size_t i;
-	int ret = 0;
+	unsigned int read = 0, shifts[MAX_DATA] = { 0 }, maxshift = 0, min_len = p->width;
+	long shifted = 0;
 
-	for (i = 0; i < p->datasets; i++) {
-		ret |= pdtry_buffer(&p->data[i], p->width, &p->x_label.start, shift);
+	if (shift) {
+		for (i = 0; i < p->datasets; i++) {
+			if (p->data[i].len < min_len) {
+				min_len = p->data[i].len;
+			}
+		}
 	}
 
-	return ret;
+	for (i = 0; i < p->datasets; i++) {
+		if (shift && p->data[i].len - min_len > MAX_AHEAD) {
+			continue;
+		}
+
+		read |= pdtry_buffer(&p->data[i], p->width, &shifted, shift);
+
+		if (shift && shifted) {
+			shifts[i] = shifted;
+			if (shifted > maxshift) {
+				maxshift = shifted;
+			}
+			shifted = 0;
+		}
+	}
+
+	if (shift && maxshift) {
+		for (i = 0; i < p->datasets; i++) {
+			if ((shifts[i] = maxshift - shifts[i])) {
+				if ((p->data[i].len > shifts[i])) {
+					p->data[i].len -= shifts[i];
+					shift_arr(p->data[i].data, shifts[i], p->data[i].len);
+				} else {
+					p->data[i].len = 0;
+				}
+			}
+		}
+
+		p->x_label.start += maxshift;
+	}
+
+	return read;
 }
 
 void

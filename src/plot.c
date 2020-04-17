@@ -26,6 +26,8 @@ plot_init(struct plot *plot)
 	plot->charset = PCUNICODE;
 	plot->height = 24;
 	plot->width = 80;
+
+	plot->follow_rate = 100;
 }
 
 static void
