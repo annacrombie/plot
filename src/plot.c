@@ -28,6 +28,7 @@ plot_init(struct plot *plot)
 	plot->width = 80;
 
 	plot->follow_rate = 100;
+	plot->average = 1;
 }
 
 static void

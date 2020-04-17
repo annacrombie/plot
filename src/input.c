@@ -9,7 +9,6 @@
 #define TMP_ARR_SIZE 64
 #define MAX_AHEAD 8
 
-static double tmp_arr[TMP_ARR_SIZE];
 static size_t buf_size = DEF_BUFFER_SIZE;
 
 void
@@ -19,7 +18,7 @@ set_input_buffer_size(size_t new_size)
 }
 
 static int
-read_numbers(struct input *in, double **dest, size_t max)
+read_numbers(struct input *in, double *dest, size_t max)
 {
 	char *endptr = NULL;
 	size_t i, read;
@@ -38,7 +37,7 @@ read_numbers(struct input *in, double **dest, size_t max)
 		}
 
 		lr = i;
-		tmp_arr[len] = strtod(&in->buf[i], &endptr);
+		dest[len] = strtod(&in->buf[i], &endptr);
 		(len)++;
 
 		if (len == max) {
@@ -54,7 +53,6 @@ read_numbers(struct input *in, double **dest, size_t max)
 		in->rem = 0;
 	}
 
-	*dest = tmp_arr;
 	return len;
 }
 
@@ -65,16 +63,31 @@ shift_arr(double *arr, size_t off, size_t amnt)
 }
 
 static int
-pdtry_buffer(struct plot_data *pd, size_t max_w, long *shifted, int shift)
+pdtry_buffer(struct plot_data *pd, size_t max_w, long *shifted, int shift, int avg_by)
 {
-	size_t len;
-	double *arr;
-
+	size_t read_len, len = 0, i;
+	double read_arr[TMP_ARR_SIZE];
+	double arr[TMP_ARR_SIZE];
 
 	if (!shift && pd->len >= max_w) {
 		return 0;
-	} else if ((len = read_numbers(&pd->src, &arr, TMP_ARR_SIZE)) == 0) {
+	} else if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
 		return 0;
+	}
+
+	if (avg_by == 1) {
+		memcpy(arr, read_arr, sizeof(double) * read_len);
+		len = read_len;
+	} else {
+		for (i = 0; i < read_len; ++i) {
+			pd->avg.sum += read_arr[i];
+
+			if (++pd->avg.count >= avg_by) {
+				arr[len++] = pd->avg.sum / pd->avg.count;
+
+				pd->avg.sum = pd->avg.count = 0;
+			}
+		}
 	}
 
 	if (len >= max_w) {
@@ -123,7 +136,7 @@ pdtry_all_buffers(struct plot *p, int shift)
 			continue;
 		}
 
-		read |= pdtry_buffer(&p->data[i], p->width, &shifted, shift);
+		read |= pdtry_buffer(&p->data[i], p->width, &shifted, shift, p->average);
 
 		if (shift && shifted) {
 			shifts[i] = shifted;

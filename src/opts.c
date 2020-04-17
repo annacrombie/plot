@@ -168,8 +168,14 @@ parse_opts(struct plot *p, int argc, char **argv)
 	char opt;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:ms:S:x:y:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:c:d:fhi:ms:S:x:y:")) != -1) {
 		switch (opt) {
+		case 'a':
+			if ((p->average = strtol(optarg, NULL, 10)) < 0) {
+				fprintf(stderr, "invalid average arg\n");
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case 'd':
 			set_plot_dimensions(optarg, p);
 			break;

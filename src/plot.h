@@ -89,6 +89,10 @@ struct plot_data {
 	size_t len;
 	unsigned int color;
 	struct input src;
+	struct {
+		double sum;
+		int count;
+	} avg;
 };
 
 struct plot {
@@ -103,6 +107,7 @@ struct plot {
 	unsigned int height;
 	unsigned int width;
 	long follow_rate;
+	long average;
 	int follow;
 	int color;
 	int merge_plot_peices;
