@@ -65,8 +65,8 @@ shift_arr(double *arr, size_t off, size_t amnt)
 	memmove(arr, arr + off, sizeof(double) * (amnt));
 }
 
-int
-pdtry_buffer(struct plot_data *pd, size_t max_w, int shift)
+static int
+pdtry_buffer(struct plot_data *pd, size_t max_w, long *x_off, int shift)
 {
 	size_t len;
 	double *arr;
@@ -94,6 +94,7 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, int shift)
 	if (len + pd->len > max_w) {
 		if (shift) {
 			shift = max_w - pd->len + len;
+			*x_off += shift;
 			shift_arr(pd->data, shift, pd->len - shift);
 			pd->len = pd->len - shift;
 
@@ -115,7 +116,7 @@ pdtry_all_buffers(struct plot *p, int shift)
 	int ret = 0;
 
 	for (i = 0; i < p->datasets; i++) {
-		ret |= pdtry_buffer(&p->data[i], p->width, shift);
+		ret |= pdtry_buffer(&p->data[i], p->width, &p->x_label.start, shift);
 	}
 
 	return ret;
