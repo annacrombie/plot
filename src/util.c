@@ -1,42 +1,7 @@
 #include "util.h"
 
-void *safe_malloc(size_t size)
-{
-	void *p;
-
-	if ((p = malloc(size)) == NULL) {
-		fprintf(stderr, "out of memory\n");
-		exit(EXIT_FAILURE);
-	}
-
-	return p;
-}
-
-void *safe_calloc(size_t nmemb, size_t size)
-{
-	void *p;
-
-	if ((p = calloc(nmemb, size)) == NULL) {
-		fprintf(stderr, "out of memory\n");
-		exit(EXIT_FAILURE);
-	}
-
-	return p;
-}
-
-void *safe_realloc(void *p, size_t size)
-{
-	void *np;
-
-	if ((np = realloc(p, size)) == NULL) {
-		fprintf(stderr, "out of memory\n");
-		exit(EXIT_FAILURE);
-	}
-
-	return np;
-}
-
-int is_digit(char c)
+int
+is_digit(char c)
 {
 	switch (c) {
 	case '0': case '1': case '2': case '3': case '4':
@@ -48,7 +13,8 @@ int is_digit(char c)
 	}
 }
 
-unsigned int char_to_color(char c)
+unsigned int
+char_to_color(char c)
 {
 	unsigned int n;
 
@@ -75,20 +41,22 @@ unsigned int char_to_color(char c)
 	return n;
 }
 
-unsigned int utf8_bytes(const char *utf8)
+unsigned int
+utf8_bytes(const char *utf8)
 {
 	unsigned char c;
 
 	c = utf8[0];
 
-	if ((c & 0x7f) == c)
+	if ((c & 0x7f) == c) {
 		return 1;
-	else if ((c & 0xdf) == c)
+	}else if ((c & 0xdf) == c) {
 		return 2;
-	else if ((c & 0xef) == c)
+	}else if ((c & 0xef) == c) {
 		return 3;
-	else if ((c & 0xf7) == c)
+	}else if ((c & 0xf7) == c) {
 		return 4;
-	else
+	}else {
 		return 0;
+	}
 }

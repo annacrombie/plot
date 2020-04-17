@@ -5,10 +5,8 @@
 #include "display.h"
 #include "util.h"
 
-#define MAXWIDTH 1000
-#define MAXHEIGHT 1000
-
-static void print_usage(FILE *f)
+static void
+print_usage(FILE *f)
 {
 	fprintf(f,
 		"plot " PLOT_VERSION "\n"
@@ -41,7 +39,8 @@ static void print_usage(FILE *f)
 		);
 }
 
-static int parse_next_num(char **buf, long *l)
+static int
+parse_next_num(char **buf, long *l)
 {
 	char *p;
 	int n = 1;
@@ -51,10 +50,11 @@ static int parse_next_num(char **buf, long *l)
 	if (is_digit(**buf)) {
 		*l = strtol(*buf, &p, 10);
 		*buf = p;
-		if (**buf == ':')
+		if (**buf == ':') {
 			(*buf)++;
-		else if (**buf != '\0')
+		}else if (**buf != '\0') {
 			n = 0;
+		}
 	} else if (**buf == ':') {
 		(*buf)++;
 		n = 0;
@@ -65,56 +65,69 @@ static int parse_next_num(char **buf, long *l)
 	return n;
 }
 
-static int set_x_label(char *s, struct x_label *xl)
+static int
+set_x_label(char *s, struct x_label *xl)
 {
 	long l;
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		xl->every = l;
+	}
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		xl->start = l;
+	}
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		xl->mod = l;
+	}
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		xl->side = l % 4;
+	}
 
 	xl->color = char_to_color(*s);
 
 	return 1;
 }
 
-static void set_y_label(char *s, struct y_label *yl)
+static void
+set_y_label(char *s, struct y_label *yl)
 {
 	long l;
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		yl->width = l;
+	}
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		yl->prec = l;
+	}
 
-	if (parse_next_num(&s, &l))
+	if (parse_next_num(&s, &l)) {
 		yl->side = l % 4;
+	}
 }
 
 /* parse a string like 34:54 with either side of the ':' optional.  If the
  * string is valid, return 1, otherwise return 0.
  */
-static void set_plot_dimensions(char *s, struct plot *p)
+static void
+set_plot_dimensions(char *s, struct plot *p)
 {
 	long l;
 
-	if (parse_next_num(&s, &l) && (l < MAXHEIGHT && l > 0))
+	if (parse_next_num(&s, &l) && (l < MAX_HEIGHT && l > 0)) {
 		p->height = l;
+	}
 
-	if (parse_next_num(&s, &l) && (l < MAXWIDTH && l > 0))
+	if (parse_next_num(&s, &l) && (l < MAX_WIDTH && l > 0)) {
 		p->width = l;
+	}
 }
 
-static void add_data_from_file(char *filename, struct plot *p, int color)
+static void
+add_data_from_file(char *filename, struct plot *p, int color)
 {
 	FILE *f = (strcmp(filename, "-") == 0) ? stdin : fopen(optarg, "r");
 
@@ -126,7 +139,8 @@ static void add_data_from_file(char *filename, struct plot *p, int color)
 	plot_add(p, f, color);
 }
 
-static enum plot_charset set_charset(char *charset)
+static enum plot_charset
+set_charset(char *charset)
 {
 	size_t len;
 
@@ -147,7 +161,8 @@ static enum plot_charset set_charset(char *charset)
 	}
 }
 
-int parse_opts(struct plot *p, int argc, char **argv)
+int
+parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
 	int lc = 0;
@@ -171,10 +186,10 @@ int parse_opts(struct plot *p, int argc, char **argv)
 			p->charset = set_charset(optarg);
 			break;
 		case 'x':
-			set_x_label(optarg, p->x_label);
+			set_x_label(optarg, &p->x_label);
 			break;
 		case 'y':
-			set_y_label(optarg, p->y_label);
+			set_y_label(optarg, &p->y_label);
 			break;
 		case 'c':
 			lc = char_to_color(*optarg);

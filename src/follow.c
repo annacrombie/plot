@@ -6,10 +6,11 @@
 #include "plot.h"
 #include "input.h"
 
-void follow_plot(struct plot *p)
+void
+follow_plot(struct plot *p)
 {
 	size_t i;
-	long height = p->height + (p->x_label->every > 0 ? 1 : 0);
+	long height = p->height + (p->x_label.every > 0 ? 1 : 0);
 
 	struct timespec sleep = {
 		.tv_sec = 0,
@@ -20,9 +21,11 @@ void follow_plot(struct plot *p)
 
 	while (1) {
 		if (!pdtry_all_buffers(p, 1)) {
-			for (i = 0; i < p->datasets; i++)
-				if (feof(p->data[i]->src->src))
-					clearerr(p->data[i]->src->src);
+			for (i = 0; i < p->datasets; i++) {
+				if (feof(p->data[i].src.src)) {
+					clearerr(p->data[i].src.src);
+				}
+			}
 
 			nanosleep(&sleep, NULL);
 			continue;
