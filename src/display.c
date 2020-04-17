@@ -164,13 +164,13 @@ plot_print_canvas(struct plot *plot)
 
 		for (x = 0; x < (long)plot->width; x++) {
 			if (plot->canvas[x][y].color > 0) {
-				printf("\e[%dm", plot->canvas[x][y].color);
+				printf("\033[%dm", plot->canvas[x][y].color);
 			}
 
 			printf("%s", plot_charsets[plot->charset][plot->canvas[x][y].peice]);
 
 			if (plot->canvas[x][y].color > 0) {
-				printf("\e[%dm", 0);
+				printf("\033[%dm", 0);
 			}
 		}
 
@@ -182,7 +182,7 @@ plot_print_canvas(struct plot *plot)
 	}
 
 	if (plot->color) {
-		printf("%c[0m", 27);
+		printf("\033[0m");
 	}
 }
 
@@ -199,7 +199,7 @@ plot_print_x_label(struct plot *p)
 	snprintf(fmt[0], 20, "%%-%dld", p->x_label.every);
 
 	if (p->x_label.color > 0) {
-		snprintf(fmt[1], 20, "%c[%%dm%%-%dld%c[0m", 27, p->x_label.every, 27);
+		snprintf(fmt[1], 20, "\033[%%dm%%-%dld\033[0m", p->x_label.every);
 	}
 
 	if (p->x_label.start % p->x_label.every > 0) {

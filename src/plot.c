@@ -108,7 +108,7 @@ plot_normalize_data(struct plot *p, struct plot_bounds *b)
 	}
 }
 
-void
+int
 plot_plot(struct plot *plot)
 {
 	size_t i;
@@ -122,8 +122,8 @@ plot_plot(struct plot *plot)
 	}
 
 	if (plot->datasets < 1 || no_data) {
-		fprintf(stderr, "no data\n");
-		return;
+		//fprintf(stderr, "no data\n");
+		return 0;
 	}
 
 	/* Determine the max and min of the array*/
@@ -134,6 +134,8 @@ plot_plot(struct plot *plot)
 	plot_normalize_data(plot, &bounds);
 
 	plot_display(plot);
+
+	return 1;
 }
 
 void

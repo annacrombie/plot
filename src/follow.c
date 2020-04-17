@@ -1,39 +1,64 @@
 #define _POSIX_C_SOURCE 199309L
 
+#include <signal.h>
+
 #include <stdio.h>
 #include <time.h>
-#include "util.h"
-#include "plot.h"
+
+#include "follow.h"
 #include "input.h"
+#include "plot.h"
+#include "util.h"
+
+static struct sigaction sigact = { 0 };
+static int loop = 1;
+
+static void
+handle_sigint(int _)
+{
+	loop = 0;
+}
+
+static void
+install_signal_handler(void)
+{
+	sigact.sa_flags = 0;
+	sigact.sa_handler = handle_sigint;
+	sigaction(SIGINT, &sigact, NULL);
+}
+
 
 void
-follow_plot(struct plot *p)
+follow_plot(struct plot *p, long ms)
 {
 	size_t i;
-	long height = p->height + (p->x_label.every > 0 ? 1 : 0);
+	int height = p->height + (p->x_label.every > 0 ? 1 : 0);
 
 	struct timespec sleep = {
 		.tv_sec = 0,
-		.tv_nsec = 500,
+		.tv_nsec = ms * 100000,
 	};
 
-	printf("%c[?25l", 27);
+	install_signal_handler();
 
-	while (1) {
+	printf("\033[?25l");
+
+	while (loop) {
 		if (!pdtry_all_buffers(p, 1)) {
 			for (i = 0; i < p->datasets; i++) {
 				if (feof(p->data[i].src.src)) {
 					clearerr(p->data[i].src.src);
 				}
 			}
-
-			nanosleep(&sleep, NULL);
-			continue;
 		}
 
-		plot_plot(p);
-		printf("%c[%ldA", 27, height);
+		if (plot_plot(p)) {
+			printf("\033[%dA", height);
+			fflush(stdout);
+		}
+
+		nanosleep(&sleep, NULL);
 	}
 
-	printf("%c[%ldB%c[?12l%c[?25h", 27, height, 27, 27);
+	printf("\033[%dB\033[?12l\033[?25h\n", height);
 }

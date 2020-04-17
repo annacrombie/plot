@@ -17,7 +17,8 @@ print_usage(FILE *f)
 		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
 		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"
-		"  -f - \"follow\" input, only works with stdin\n"
+		"  -f - \"follow\" input\n"
+		"  -S [milliseconds] - follow rate\n"
 		"  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴\n"
 		"  -s %%<charset>|ascii|unicode - set output charset\n"
 		"  -h - duh...\n"
@@ -167,7 +168,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 	char opt;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "c:d:fhi:ms:x:y:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:d:fhi:ms:S:x:y:")) != -1) {
 		switch (opt) {
 		case 'd':
 			set_plot_dimensions(optarg, p);
@@ -184,6 +185,9 @@ parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 's':
 			p->charset = set_charset(optarg);
+			break;
+		case 'S':
+			p->follow_rate = strtol(optarg, NULL, 10);
 			break;
 		case 'x':
 			set_x_label(optarg, &p->x_label);

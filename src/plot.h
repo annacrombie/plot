@@ -102,13 +102,14 @@ struct plot {
 	size_t datasets;
 	unsigned int height;
 	unsigned int width;
-	int color;
+	long follow_rate;
 	int follow;
+	int color;
 	int merge_plot_peices;
 };
 
 void plot_init(struct plot *plot);
 void plot_add(struct plot *plot, FILE *f, int color);
-void plot_plot(struct plot *plot);
+int plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot);
 #endif

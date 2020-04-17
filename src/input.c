@@ -9,13 +9,7 @@
 #define TMP_ARR_SIZE 64
 
 static double tmp_arr[TMP_ARR_SIZE];
-static size_t buf_ini_size;
-
-void
-input_init(void)
-{
-	buf_ini_size = DEF_BUFFER_SIZE;
-}
+static size_t buf_ini_size = DEF_BUFFER_SIZE;
 
 void
 set_input_buffer_size(size_t new_size)
