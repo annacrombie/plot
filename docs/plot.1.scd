@@ -17,6 +17,10 @@ plot reads sequences of numbers and outputs a line graph.
 *-i* (<filename> | -)
 	add filename (or stdin) as a data source.  see *INPUT*
 
+*-a* <n>
+	average n inputs per data point.  For example, given -a 5, every 5
+	numbers read will be averaged together to produce one output
+
 *-f*
 	"follow" input, e.g. continuously monitor inputs for new data and
 	redraw the plot every time a new number is read.  Additionally, when

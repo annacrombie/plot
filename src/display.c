@@ -140,9 +140,9 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 	pp = side == 1 ? PPTLeft | ((e.peice & 0x8) >> 2) : PPTRight | e.peice;
 
 	if (pp == PPCross && e.color > 0) {
-		printf("\e[%dm", e.color);
+		printf("\033[%dm", e.color);
 	}else if (p->color) {
-		printf("%c[0m", 27);
+		printf("\033[0m");
 	}
 
 	if (side == 1) {
