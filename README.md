@@ -3,26 +3,22 @@
 Generate a simple ascii plot
 
 ```
-$ plot <<<"1 2 3 4 5 4 3 2 1"
+$ { seq 1 5; seq 1 4 | tac } | plot -d5
        5.00 ┤   ╭╮
-       4.73 ┤   ││
-       4.47 ┤   ││
-       4.20 ┤   ││
-       3.93 ┤  ╭╯╰╮
-       3.67 ┤  │  │
-       3.40 ┤  │  │
-       3.13 ┤ ╭╯  ╰╮
-       2.87 ┤ │    │
-       2.60 ┤ │    │
-       2.33 ┤ │    │
-       2.07 ┤╭╯    ╰╮
-       1.80 ┤│      │
-       1.53 ┤│      │
-       1.27 ┤│      │
+       4.00 ┤  ╭╯╰╮
+       3.00 ┤ ╭╯  ╰╮
+       2.00 ┤╭╯    ╰╮
        1.00 ┼╯      ╰─
+$
 ```
 
 # Building
+
+Dependencies:
+
++ meson
++ ninja
++ c compiler
 
 ```
 $ meson build
@@ -31,10 +27,8 @@ $ ninja -C build
 
 # Installing
 
-You might want to put the executable somewhere in your `$PATH`, e.g.
-
 ```
-$ cp build/plot /usr/local/bin/
+$ ninja -C build install
 ```
 
 # Usage
