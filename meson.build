@@ -1,7 +1,7 @@
 project(
 	'plot',
 	'c',
-	version: '0.2.0',
+	version: '0.3.0',
 	license: 'GPL-3.0-only',
 	meson_version: '>=0.48.0',
 	default_options: [
@@ -47,21 +47,25 @@ src = files([
 
 executable('plot', sources: src, dependencies: deps, install: true)
 
-scdoc = dependency('scdoc', native: true, required: true, version: '>=1.9.0')
-scdoc_prog = find_program(scdoc.get_pkgconfig_variable('scdoc'), native: true)
-sh = find_program('sh', native: true)
-mandir = get_option('mandir')
+scdoc = dependency('scdoc', native: true, required: false, version: '>=1.9.0')
 
-custom_target(
-	'plot.1',
-	input: 'docs/plot.1.scd',
-	output: 'plot.1',
-	command: [
-		sh, '-c', '@0@ < @INPUT@ > @1@'.format(
-			scdoc_prog.path(),
-			join_paths(meson.current_build_dir(), 'plot.1'))
-	],
-	install: true,
-	install_dir: '@0@/man@1@'.format(mandir, 1)
-)
+if scdoc.found()
+	scdoc_prog = find_program(scdoc.get_pkgconfig_variable('scdoc'), native: true)
+	sh = find_program('sh', native: true)
+	mandir = get_option('mandir')
 
+	custom_target(
+		'plot.1',
+		input: 'docs/plot.1.scd',
+		output: 'plot.1',
+		command: [
+			sh, '-c', '@0@ < @INPUT@ > @1@'.format(
+				scdoc_prog.path(),
+				join_paths(meson.current_build_dir(), 'plot.1'))
+		],
+		install: true,
+		install_dir: '@0@/man@1@'.format(mandir, 1)
+	)
+else
+	warning('scdoc not found, no man pages will be installed')
+endif
