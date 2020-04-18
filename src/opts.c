@@ -1,8 +1,10 @@
-#include <stdio.h>
 #include <getopt.h>
+#include <stdio.h>
 #include <string.h>
-#include "plot.h"
+#include <strings.h>
+
 #include "display.h"
+#include "plot.h"
 #include "util.h"
 
 static void
@@ -42,29 +44,26 @@ print_usage(FILE *f)
 }
 
 static int
-parse_next_num(char **buf, long *l)
+parse_next_num(char **s, long *l)
 {
-	char *p;
-	int n = 1;
+	char *sep;
 
-	*l = 0;
-
-	if (is_digit(**buf)) {
-		*l = strtol(*buf, &p, 10);
-		*buf = p;
-		if (**buf == ':') {
-			(*buf)++;
-		}else if (**buf != '\0') {
-			n = 0;
+	if ((sep = strchr(*s, ':'))) {
+		if (sep == *s) {
+			(*s)++;
+			return 0;
 		}
-	} else if (**buf == ':') {
-		(*buf)++;
-		n = 0;
-	} else if (**buf != '\0') {
-		n = 0;
+		*sep = '\0';
+		*l = strtol(*s, NULL, 10);
+		*s = sep + 1;
+		return 1;
+	} else if (**s) {
+		*l = strtol(*s, NULL, 10);
+		**s = 0;
+		return 1;
+	} else {
+		return 0;
 	}
-
-	return n;
 }
 
 static int
