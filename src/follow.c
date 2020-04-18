@@ -32,7 +32,11 @@ void
 follow_plot(struct plot *p, long ms)
 {
 	size_t i;
-	int height = p->height + (p->x_label.every > 0 ? 1 : 0);
+	int height = p->height;
+
+	if (p->x_label.every && p->x_label.side > 0) {
+		height += p->x_label.side == 3 ? 2 : 1;
+	}
 
 	struct timespec sleep = {
 		.tv_sec = 0,
