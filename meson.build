@@ -31,18 +31,21 @@ add_project_arguments(cc.get_supported_arguments([
 	'-Wno-unused-parameter',
 ]), language: 'c')
 
-math_lib = cc.find_library('m', required : true)
+deps = [
+	cc.find_library('m', required : true),
+]
+
 src = files([
-	'src/main.c',
 	'src/display.c',
-	'src/input.c',
-	'src/plot.c',
 	'src/follow.c',
+	'src/input.c',
+	'src/main.c',
 	'src/opts.c',
-	'src/util.c'
+	'src/plot.c',
+	'src/util.c',
 ])
 
-executable('plot', sources: src, dependencies : math_lib, install : true)
+executable('plot', sources: src, dependencies: deps, install: true)
 
 scdoc = dependency('scdoc', native: true, required: true, version: '>=1.9.0')
 scdoc_prog = find_program(scdoc.get_pkgconfig_variable('scdoc'), native: true)
