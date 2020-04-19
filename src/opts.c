@@ -87,7 +87,9 @@ set_x_label(char *s, struct x_label *xl)
 		xl->side = l % 4;
 	}
 
-	xl->color = char_to_color(*s);
+	if (*s) {
+		xl->color = char_to_color(*s);
+	}
 
 	return 1;
 }
