@@ -35,7 +35,10 @@ char_to_color(char c)
 	case 'M': n = 95; break;
 	case 'C': n = 96; break;
 	case 'W': n = 97; break;
-	default:  n = 0;  break;
+	default:
+		fprintf(stderr, "inavlid color char: %c\n", c);
+		n = 0;
+		break;
 	}
 
 	return n;
