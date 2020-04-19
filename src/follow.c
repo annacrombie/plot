@@ -34,7 +34,7 @@ follow_plot(struct plot *p, long ms)
 	size_t i;
 	int height = p->height;
 
-	if (p->x_label.every && p->x_label.side > 0) {
+	if (p->x_label.every && p->x_label.side) {
 		height += p->x_label.side == 3 ? 2 : 1;
 	}
 
