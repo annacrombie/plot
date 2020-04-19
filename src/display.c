@@ -187,61 +187,80 @@ plot_print_canvas(struct plot *plot)
 }
 
 static void
-plot_print_x_label(struct plot *p)
+plot_print_x_label(struct plot *p, char *buf)
 {
 	long end, tmp, i;
-	char fmt[2][20];
+	int every, start;
+	size_t printed = 0;
+	char fmt[2][32] = { 0 };
 
 	if (p->x_label.every <= 0) {
 		return;
 	}
 
-	snprintf(fmt[0], 20, "%%-%dld", p->x_label.every);
-
-	if (p->x_label.color > 0) {
-		snprintf(fmt[1], 20, "\033[%%dm%%-%dld\033[0m", p->x_label.every);
+	every = p->x_label.every / p->average;
+	if (!every) {
+		every = 1;
 	}
 
-	if (p->x_label.start % p->x_label.every > 0) {
-		tmp = p->x_label.every - (p->x_label.start % p->x_label.every);
+	start = p->x_label.start / p->average;
+
+	snprintf(fmt[0], 31, "%%-%dld", every);
+
+	if (p->x_label.color) {
+		snprintf(fmt[1], 31, "\033[%%dm%%-%dld\033[0m", every);
+	}
+
+	if (start % every > 0) {
+		tmp = every - (start % every);
 	} else {
 		tmp = 0;
 	}
 
 	end = (p->y_label.side & 1 ? p->y_label.width + 2 : 0) + tmp;
 	for (i = 0; i < end; i++) {
-		printf(" ");
+		buf[printed++] = ' ';
 	}
 
-	end = p->x_label.start + p->width;
-	for (i = p->x_label.start + tmp; i < end; i += p->x_label.every) {
+	end = start + p->width;
+	for (i = start + tmp; i < end; i += every) {
 		tmp = i < 0 ? -1 : 1;
 		tmp *= p->x_label.mod > 0 ? i % p->x_label.mod : i;
+		tmp *= p->average;
 
-		if (tmp == 0 && p->x_label.color > 0) {
-			printf(fmt[1], p->x_label.color, tmp);
-		}else {
-			printf(fmt[0], tmp);
+		if (tmp == 0 && p->x_label.color) {
+			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
+				fmt[1], p->x_label.color, tmp);
+		} else {
+			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
+				fmt[0], tmp);
 		}
 	}
 
-	printf("\n");
+	if (printed < MAX_WIDTH) {
+		buf[printed] = '\n';
+	}
 }
 
 void
 plot_display(struct plot *plot)
 {
+	char x_label[MAX_WIDTH] = { 0 };
+	if (plot->x_label.side && plot->x_label.every) {
+		plot_print_x_label(plot, x_label);
+	}
+
 	/* create the graph */
 	plot_fill_canvas(plot);
 
 	if (plot->x_label.side & 2) {
-		plot_print_x_label(plot);
+		printf("%s", x_label);
 	}
 
 	/* print the graph with labels */
 	plot_print_canvas(plot);
 
 	if (plot->x_label.side & 1) {
-		plot_print_x_label(plot);
+		printf("%s", x_label);
 	}
 }
