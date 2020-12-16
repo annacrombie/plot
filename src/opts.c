@@ -55,13 +55,11 @@ parse_next_num(char **s, long *l)
 			(*s)++;
 			return 0;
 		}
-		*sep = '\0';
 		*l = strtol(*s, NULL, 10);
 		*s = sep + 1;
 		return 1;
 	} else if (**s) {
 		*l = strtol(*s, NULL, 10);
-		**s = 0;
 		return 1;
 	} else {
 		return 0;
