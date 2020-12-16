@@ -9,8 +9,8 @@
 #define INBUF 512
 #define CHARBUF 31
 #define MAX_DATA 32
-#define MAX_WIDTH 256
-#define MAX_HEIGHT 256
+#define MAX_WIDTH 512
+#define MAX_HEIGHT 512
 
 enum plot_charset {
 	PCUNICODE = 0,
