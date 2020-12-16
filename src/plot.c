@@ -29,6 +29,8 @@ plot_init(struct plot *plot)
 
 	plot->follow_rate = 100;
 	plot->average = 1;
+
+	plot->datasets = 0;
 }
 
 static void
