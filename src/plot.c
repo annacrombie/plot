@@ -9,10 +9,6 @@
 
 #define PLOT_DEFAULT_BOUND 8
 
-struct plot_bounds {
-	double max;
-	double min;
-};
 
 void
 plot_init(struct plot *plot)
@@ -31,6 +27,8 @@ plot_init(struct plot *plot)
 	plot->average = 1;
 
 	plot->datasets = 0;
+
+	plot->fixed_bounds = 0;
 }
 
 static void
@@ -131,12 +129,15 @@ plot_plot(struct plot *plot)
 		return 0;
 	}
 
+
 	/* Determine the max and min of the array*/
-	struct plot_bounds bounds = plot_data_get_bounds(plot->datasets, plot->data);
+	if (!plot->fixed_bounds) {
+		plot->bounds = plot_data_get_bounds(plot->datasets, plot->data);
+	}
 
-	plot_make_labels(plot, &bounds);
+	plot_make_labels(plot, &plot->bounds);
 
-	plot_normalize_data(plot, &bounds);
+	plot_normalize_data(plot, &plot->bounds);
 
 	plot_display(plot);
 
