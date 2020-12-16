@@ -11,10 +11,6 @@
 
 #define PLOT_DEFAULT_BOUND 8
 
-struct plot_bounds {
-	double max;
-	double min;
-};
 
 void
 plot_init(struct plot *plot)
@@ -33,6 +29,8 @@ plot_init(struct plot *plot)
 	plot->average = 1;
 
 	plot->datasets = 0;
+
+	plot->fixed_bounds = 0;
 }
 
 static void
@@ -84,11 +82,11 @@ plot_data_get_bounds(size_t len, struct plot_data *pda)
 }
 
 static void
-plot_make_labels(struct plot *p, struct plot_bounds *pb)
+plot_make_labels(struct plot *p)
 {
 	unsigned int i;
-	double inc = (pb->max - pb->min) / (double)(p->height - 1);
-	double s =  pb->min;
+	double inc = (p->bounds.max - p->bounds.min) / (double)(p->height - 1);
+	double s =  p->bounds.min;
 
 	for (i = 0; i < p->height; i++) {
 		p->labels[i] = s;
@@ -97,11 +95,11 @@ plot_make_labels(struct plot *p, struct plot_bounds *pb)
 }
 
 static void
-plot_normalize_data(struct plot *p, struct plot_bounds *b)
+plot_normalize_data(struct plot *p)
 {
 	size_t i, j;
 
-	double ratio = (double)(p->height - 1) / (b->max - b->min);
+	double ratio = (double)(p->height - 1) / (p->bounds.max - p->bounds.min);
 
 	for (j = 0; j < p->datasets; j++) {
 		//d = ;
@@ -110,7 +108,7 @@ plot_normalize_data(struct plot *p, struct plot_bounds *b)
 		p->normalized[j][1] = p->data[j].color;
 		for (i = 2; i < (size_t)p->normalized[j][0]; i++) {
 			p->normalized[j][i] = lround(
-				(p->data[j].data[i - 2] - b->min) * ratio);
+				(p->data[j].data[i - 2] - p->bounds.min) * ratio);
 		}
 	}
 }
@@ -133,12 +131,15 @@ plot_plot(struct plot *plot)
 		return 0;
 	}
 
+
 	/* Determine the max and min of the array*/
-	struct plot_bounds bounds = plot_data_get_bounds(plot->datasets, plot->data);
+	if (!plot->fixed_bounds) {
+		plot->bounds = plot_data_get_bounds(plot->datasets, plot->data);
+	}
 
-	plot_make_labels(plot, &bounds);
+	plot_make_labels(plot);
 
-	plot_normalize_data(plot, &bounds);
+	plot_normalize_data(plot);
 
 	plot_display(plot);
 

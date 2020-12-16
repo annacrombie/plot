@@ -27,6 +27,9 @@ plot reads sequences of numbers and outputs a line graph.
 	the length of the plot reaches the maximum width, begin scrolling to
 	the left.
 
+*-b* [min]:[max]
+	set fixed plot bounds (instead of dynamically evaluating bounds).
+
 *-d* [height]:[width]
 	set plot dimensions (not including axis labels)
 

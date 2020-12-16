@@ -84,6 +84,11 @@ struct input {
 	size_t size;
 };
 
+struct plot_bounds {
+	double max;
+	double min;
+};
+
 struct plot_data {
 	double data[MAX_WIDTH];
 	size_t len;
@@ -111,6 +116,8 @@ struct plot {
 	int follow;
 	int color;
 	int merge_plot_peices;
+	int fixed_bounds;
+	struct plot_bounds bounds;
 };
 
 void plot_init(struct plot *plot);
