@@ -35,8 +35,8 @@ follow_plot(struct plot *p, long ms)
 	size_t i;
 	int height = p->height;
 
-	if (p->x_label.every && p->x_label.side) {
-		height += p->x_label.side == 3 ? 2 : 1;
+	if (p->x_label->every && p->x_label->side) {
+		height += p->x_label->side == 3 ? 2 : 1;
 	}
 
 	struct timespec sleep = {
@@ -52,8 +52,8 @@ follow_plot(struct plot *p, long ms)
 		if (!pdtry_all_buffers(p, 1)) {
 			eof = 1;
 			for (i = 0; i < p->datasets; i++) {
-				if (feof(p->data[i].src.src)) {
-					clearerr(p->data[i].src.src);
+				if (feof(p->data[i]->src->src)) {
+					clearerr(p->data[i]->src->src);
 				}
 				else {
 					eof = 0;

@@ -137,11 +137,11 @@ set_fixed_plot_bounds(char *s, struct plot *p)
 	p->fixed_bounds = 1;
 
 	if (parse_next_num(&s, &l)) {
-		p->bounds.min = l;
+		p->bounds->min = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		p->bounds.max = l;
+		p->bounds->max = l;
 	}
 }
 
@@ -220,10 +220,10 @@ parse_opts(struct plot *p, int argc, char **argv)
 			p->follow_rate = strtol(optarg, NULL, 10);
 			break;
 		case 'x':
-			set_x_label(optarg, &p->x_label);
+			set_x_label(optarg, p->x_label);
 			break;
 		case 'y':
-			set_y_label(optarg, &p->y_label);
+			set_y_label(optarg, p->y_label);
 			break;
 		case 'c':
 			lc = char_to_color(*optarg);

@@ -36,6 +36,7 @@ deps = [
 ]
 
 src = files([
+	'src/alloc.c',
 	'src/display.c',
 	'src/follow.c',
 	'src/input.c',

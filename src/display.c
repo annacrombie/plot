@@ -87,11 +87,11 @@ plot_write_norm(struct plot *plot, long *norm)
 			}
 
 			if (plot->merge_plot_peices) {
-				next = plot->canvas[x - 2][y].peice | next;
+				next = plot->canvas[x - 2][y]->peice | next;
 			}
 
-			plot->canvas[x - 2][y].color = norm[1];
-			plot->canvas[x - 2][y].peice = next;
+			plot->canvas[x - 2][y]->color = norm[1];
+			plot->canvas[x - 2][y]->peice = next;
 		}
 	}
 }
@@ -103,8 +103,8 @@ plot_fill_canvas(struct plot *plot)
 
 	for (x = 0; x < plot->width; x++) {
 		for (y = 0; y < plot->height; y++) {
-			plot->canvas[x][y].color = 0;
-			plot->canvas[x][y].peice = PPBlank;
+			plot->canvas[x][y]->color = 0;
+			plot->canvas[x][y]->peice = PPBlank;
 		}
 	}
 
@@ -135,13 +135,13 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 {
 	enum plot_peice pp;
 
-	plot_y_label_init_fmts(&p->y_label, side);
+	plot_y_label_init_fmts(p->y_label, side);
 
 	pp = side == 1 ? PPTLeft | ((e.peice & 0x8) >> 2) : PPTRight | e.peice;
 
 	if (side == 1) {
 		printf("\033[0m");
-		printf(p->y_label.l_fmt, l);
+		printf(p->y_label->l_fmt, l);
 	}
 
 	if (pp == PPCross && e.color > 0) {
@@ -154,7 +154,7 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 
 	if (side == 2) {
 		printf("\033[0m");
-		printf(p->y_label.r_fmt, l);
+		printf(p->y_label->r_fmt, l);
 	}
 }
 
@@ -164,24 +164,24 @@ plot_print_canvas(struct plot *plot)
 	long x, y;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		if ((plot->y_label.side & 1) == 1) {
-			plot_print_y_label(plot, plot->canvas[0][y], plot->labels[y], 1);
+		if ((plot->y_label->side & 1) == 1) {
+			plot_print_y_label(plot, *plot->canvas[0][y], plot->labels[y], 1);
 		}
 
 		for (x = 0; x < (long)plot->width; x++) {
-			if (plot->canvas[x][y].color > 0) {
-				printf("\033[%dm", plot->canvas[x][y].color);
+			if (plot->canvas[x][y]->color > 0) {
+				printf("\033[%dm", plot->canvas[x][y]->color);
 			}
 
-			printf("%s", plot_charsets[plot->charset][plot->canvas[x][y].peice]);
+			printf("%s", plot_charsets[plot->charset][plot->canvas[x][y]->peice]);
 
-			if (plot->canvas[x][y].color > 0) {
+			if (plot->canvas[x][y]->color > 0) {
 				printf("\033[%dm", 0);
 			}
 		}
 
-		if ((plot->y_label.side & 2) == 2) {
-			plot_print_y_label(plot, plot->canvas[plot->width - 1][y], plot->labels[y], 2);
+		if ((plot->y_label->side & 2) == 2) {
+			plot_print_y_label(plot, *plot->canvas[plot->width - 1][y], plot->labels[y], 2);
 		}
 
 		printf("\n");
@@ -200,20 +200,20 @@ plot_print_x_label(struct plot *p, char *buf)
 	size_t printed = 0;
 	char fmt[2][32] = { 0 };
 
-	if (p->x_label.every <= 0) {
+	if (p->x_label->every <= 0) {
 		return;
 	}
 
-	every = p->x_label.every / p->average;
+	every = p->x_label->every / p->average;
 	if (!every) {
 		every = 1;
 	}
 
-	start = p->x_label.start / p->average;
+	start = p->x_label->start / p->average;
 
 	snprintf(fmt[0], 31, "%%-%dld", every);
 
-	if (p->x_label.color) {
+	if (p->x_label->color) {
 		snprintf(fmt[1], 31, "\033[%%dm%%-%dld\033[0m", every);
 	}
 
@@ -223,20 +223,20 @@ plot_print_x_label(struct plot *p, char *buf)
 		tmp = 0;
 	}
 
-	end = (p->y_label.side & 1 ? p->y_label.width + 2 : 0) + tmp;
-	for (i = 0; i < end; i++) {
+	end = (p->y_label->side & 1 ? p->y_label->width + 2 : 0) + tmp;
+	for (i = 0; i < end && i < MAX_WIDTH; i++) {
 		buf[printed++] = ' ';
 	}
 
 	end = start + p->width;
 	for (i = start + tmp; i < end; i += every) {
 		tmp = i < 0 ? -1 : 1;
-		tmp = p->x_label.mod > 0 ? tmp * (i % p->x_label.mod) : i;
+		tmp = p->x_label->mod > 0 ? tmp * (i % p->x_label->mod) : i;
 		tmp *= p->average;
 
-		if (tmp == 0 && p->x_label.color) {
+		if (tmp == 0 && p->x_label->color) {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
-				fmt[1], p->x_label.color, tmp);
+				fmt[1], p->x_label->color, tmp);
 		} else {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
 				fmt[0], tmp);
@@ -252,21 +252,21 @@ void
 plot_display(struct plot *plot)
 {
 	char x_label[MAX_WIDTH] = { 0 };
-	if (plot->x_label.side && plot->x_label.every) {
+	if (plot->x_label->side && plot->x_label->every) {
 		plot_print_x_label(plot, x_label);
 	}
 
 	/* create the graph */
 	plot_fill_canvas(plot);
 
-	if (plot->x_label.side & 2) {
+	if (plot->x_label->side & 2) {
 		printf("%s", x_label);
 	}
 
 	/* print the graph with labels */
 	plot_print_canvas(plot);
 
-	if (plot->x_label.side & 1) {
+	if (plot->x_label->side & 1) {
 		printf("%s", x_label);
 	}
 }

@@ -71,8 +71,8 @@ struct y_label {
 struct x_label {
 	unsigned int mod;
 	unsigned int every;
-	long start;
 	unsigned int color;
+	long start;
 	int side;
 	char label[CHARBUF + 1];
 };
@@ -90,10 +90,10 @@ struct plot_bounds {
 };
 
 struct plot_data {
-	double data[MAX_WIDTH];
-	size_t len;
 	unsigned int color;
-	struct input src;
+	size_t len;
+	double *data;
+	struct input *src;
 	struct {
 		double sum;
 		int count;
@@ -101,27 +101,40 @@ struct plot_data {
 };
 
 struct plot {
-	struct x_label x_label;
-	struct y_label y_label;
-	struct canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
-	long normalized[MAX_DATA][MAX_WIDTH];
-	double labels[MAX_HEIGHT];
-	struct plot_data data[MAX_DATA];
-	enum plot_charset charset;
-	size_t datasets;
-	unsigned int height;
-	unsigned int width;
-	long follow_rate;
-	long average;
 	int animate;
 	int follow;
 	int color;
 	int merge_plot_peices;
 	int fixed_bounds;
-	struct plot_bounds bounds;
+	enum plot_charset charset;
+	unsigned int height;
+	unsigned int width;
+	long follow_rate;
+	long average;
+	double *labels;
+	long **normalized;
+	size_t datasets;
+	struct x_label *x_label;
+	struct y_label *y_label;
+	struct canvas_elem ***canvas;
+	struct plot_bounds *bounds;
+	struct plot_data **data;
 };
 
-void plot_init(struct plot *plot);
+struct y_label * init_y_label(void);
+void free_y_label(struct y_label *);
+struct x_label * init_x_label(void);
+void free_x_label(struct x_label *);
+struct input * init_input(void);
+void free_input(struct input *);
+struct plot_bounds * init_plot_bounds(void);
+void free_plot_bounds(struct plot_bounds *);
+struct plot_data * init_plot_data(void);
+void free_plot_data(struct plot_data *);
+struct plot * init_plot_z(void);
+void free_plot(struct plot *);
+
+struct plot * plot_init(void);
 void plot_add(struct plot *plot, FILE *f, int color);
 int plot_plot(struct plot *plot);
 void plot_destroy(struct plot *plot);

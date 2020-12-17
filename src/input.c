@@ -71,7 +71,7 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, long *shifted, size_t shift, in
 
 	if (!shift && pd->len >= max_w) {
 		return 0;
-	} else if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
+	} else if ((read_len = read_numbers(pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
 		return 0;
 	}
 
@@ -129,18 +129,18 @@ pdtry_all_buffers(struct plot *p, int shift)
 
 	if (shift) {
 		for (i = 0; i < p->datasets; i++) {
-			if (p->data[i].len < min_len) {
-				min_len = p->data[i].len;
+			if (p->data[i]->len < min_len) {
+				min_len = p->data[i]->len;
 			}
 		}
 	}
 
 	for (i = 0; i < p->datasets; i++) {
-		if (!p->animate && shift && p->data[i].len - min_len > MAX_AHEAD) {
+		if (!p->animate && shift && p->data[i]->len - min_len > MAX_AHEAD) {
 			continue;
 		}
 
-		read |= pdtry_buffer(&p->data[i], p->width, &shifted, shift, p->average);
+		read |= pdtry_buffer(p->data[i], p->width, &shifted, shift, p->average);
 
 		if (shift && shifted) {
 			shifts[i] = shifted;
@@ -154,16 +154,16 @@ pdtry_all_buffers(struct plot *p, int shift)
 	if (shift && maxshift) {
 		for (i = 0; i < p->datasets; i++) {
 			if ((shifts[i] = maxshift - shifts[i])) {
-				if ((p->data[i].len > shifts[i])) {
-					p->data[i].len -= shifts[i];
-					shift_arr(p->data[i].data, shifts[i], p->data[i].len);
+				if ((p->data[i]->len > shifts[i])) {
+					p->data[i]->len -= shifts[i];
+					shift_arr(p->data[i]->data, shifts[i], p->data[i]->len);
 				} else {
-					p->data[i].len = 0;
+					p->data[i]->len = 0;
 				}
 			}
 		}
 
-		p->x_label.start += maxshift;
+		p->x_label->start += maxshift;
 	}
 
 	return read;
