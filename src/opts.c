@@ -16,7 +16,7 @@ print_usage(FILE *f)
 		"opts\n"
 		"  -i <filename>|- - specify a data source\n"
 		"  -a <n> - average n inputs per data point\n"
-		"  -d [width]:[height] - set plot dimensions\n"
+		"  -d [height]:[width] - set plot dimensions\n"
 		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
 		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"

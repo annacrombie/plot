@@ -39,7 +39,7 @@ usage: plot [opts]
 opts
   -i <filename>|- - specify a data source
   -a <n> - average n inputs per data point
-  -d [width]:[height] - set plot dimensions
+  -d [height]:[width] - set plot dimensions
   -x [every]:[offset]:[mod]:[side]:[color] - set x label format
   -y [width]:[prec]:[side] - set y label format
   -c <color> - set color of next data source
