@@ -3,7 +3,7 @@
 Generate a simple ascii plot
 
 ```
-$ { seq 1 5; seq 1 4 | tac } | plot -d5
+$ { seq 1 5; seq 1 4 | tac; } | plot -d5
        5.00 ┤   ╭╮
        4.00 ┤  ╭╯╰╮
        3.00 ┤ ╭╯  ╰╮
