@@ -126,7 +126,7 @@ With a little shell scripting, you can use plot to monitor your network usage.
 #!/bin/sh
 
 count_packets() {
-	ifconfig "$1" | grep "$2 packets" | sed 's/^.*packets:\\([0-9]\\+\\).*$/\\1/g'
+	ifconfig "$1" | grep "$2 packets" | awk '{print $3}' 
 }
 
 monitor_net() {
@@ -143,7 +143,7 @@ random=$RANDOM
 monitor_net $1 RX > /tmp/${random}rx&
 monitor_net $1 TX > /tmp/${random}tx&
 
-plot -f -cr -i tmp/wlan0rx -cl -i tmp/wlan0tx
+plot -f -cr -i /tmp/${random}rx -cl -i /tmp/${random}tx
 ```
 
 # AUTHORS
