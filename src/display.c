@@ -113,8 +113,8 @@ plot_fill_canvas(struct plot *plot)
 	}
 }
 
-static char *yl_l_fmt_fmt = "%%%d.%df %%s";
-static char *yl_r_fmt_fmt = "%%s %%-%d.%df";
+static char *yl_l_fmt_fmt = "%%%d.%df ";
+static char *yl_r_fmt_fmt = " %%-%d.%df";
 
 static void
 plot_y_label_init_fmts(struct y_label *yl, int side)
@@ -139,16 +139,22 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 
 	pp = side == 1 ? PPTLeft | ((e.peice & 0x8) >> 2) : PPTRight | e.peice;
 
+	if (side == 1) {
+		printf("\033[0m");
+		printf(p->y_label.l_fmt, l);
+	}
+
 	if (pp == PPCross && e.color > 0) {
 		printf("\033[%dm", e.color);
-	}else if (p->color) {
+	} else if (p->color) {
 		printf("\033[0m");
 	}
 
-	if (side == 1) {
-		printf(p->y_label.l_fmt, l, plot_charsets[p->charset][pp]);
-	}else if (side == 2) {
-		printf(p->y_label.r_fmt, plot_charsets[p->charset][pp], l);
+	printf("%s", plot_charsets[p->charset][pp]);
+
+	if (side == 2) {
+		printf("\033[0m");
+		printf(p->y_label.r_fmt, l);
 	}
 }
 
