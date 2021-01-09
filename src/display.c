@@ -181,7 +181,7 @@ plot_print_canvas(struct plot *plot)
 		}
 
 		if ((plot->y_label.side & 2) == 2) {
-			plot_print_y_label(plot, plot->canvas[0][y], plot->labels[y], 2);
+			plot_print_y_label(plot, plot->canvas[plot->width - 1][y], plot->labels[y], 2);
 		}
 
 		printf("\n");
