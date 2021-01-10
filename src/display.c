@@ -231,7 +231,7 @@ plot_print_x_label(struct plot *p, char *buf)
 	end = start + p->width;
 	for (i = start + tmp; i < end; i += every) {
 		tmp = i < 0 ? -1 : 1;
-		tmp *= p->x_label.mod > 0 ? i % p->x_label.mod : i;
+		tmp = p->x_label.mod > 0 ? tmp * (i % p->x_label.mod) : i;
 		tmp *= p->average;
 
 		if (tmp == 0 && p->x_label.color) {
