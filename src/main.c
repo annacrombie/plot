@@ -15,7 +15,7 @@ main(int argc, char **argv)
 		plot_add(&p, stdin, lc);
 	}
 
-	if (p.follow) {
+	if (p.animate || p.follow) {
 		set_input_buffer_size(8);
 		follow_plot(&p, p.follow_rate);
 	} else {

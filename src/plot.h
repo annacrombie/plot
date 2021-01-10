@@ -113,6 +113,7 @@ struct plot {
 	unsigned int width;
 	long follow_rate;
 	long average;
+	int animate;
 	int follow;
 	int color;
 	int merge_plot_peices;
