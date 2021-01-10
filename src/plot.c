@@ -25,7 +25,10 @@ plot_init(struct plot *plot)
 	plot->height = 24;
 	plot->width = 80;
 
+	plot->animate = 0;
+	plot->follow = 0;
 	plot->follow_rate = 100;
+
 	plot->average = 1;
 
 	plot->datasets = 0;

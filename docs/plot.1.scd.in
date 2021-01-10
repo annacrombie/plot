@@ -27,6 +27,10 @@ plot reads sequences of numbers and outputs a line graph.
 	the length of the plot reaches the maximum width, begin scrolling to
 	the left.
 
+*-A*
+	"animate" input by following and exit. The behaviour is identical
+	to the "follow" -f feature, but upon input EOF, the plot stops.
+
 *-b* [min]:[max]
 	set fixed plot bounds (instead of dynamically evaluating bounds).
 
