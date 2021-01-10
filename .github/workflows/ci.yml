@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.0.0
+    - name: Dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y gcc meson
+    - name: Prebuild
+      run: |
+        rm -rf ./build/
+        meson ./build/
+    - name: Build
+      run: |
+        ninja -C build
+        sudo ninja -C build install
+    - name: Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: plot
+        path: ./build/plot
+
+  test:
+    needs: build
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.0.0
+    - name: Dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y valgrind
+    - name: Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: plot
+        path: ./build/
+    - name: Install
+      run: |
+        sudo cp -fv ./build/plot /usr/local/bin/
+        sudo chmod 755 /usr/local/bin/plot
+    - name: Test
+      run: |
+        sh ./tests/test.sh
