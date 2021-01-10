@@ -30,6 +30,7 @@ install_signal_handler(void)
 void
 follow_plot(struct plot *p, long ms)
 {
+	int eof;
 	size_t i;
 	int height = p->height;
 
@@ -48,10 +49,18 @@ follow_plot(struct plot *p, long ms)
 
 	while (loop) {
 		if (!pdtry_all_buffers(p, 1)) {
+			eof = 1;
 			for (i = 0; i < p->datasets; i++) {
 				if (feof(p->data[i].src.src)) {
 					clearerr(p->data[i].src.src);
 				}
+				else {
+					eof = 0;
+				}
+			}
+
+			if (p->animate && eof) {
+				loop = 0;
 			}
 		}
 

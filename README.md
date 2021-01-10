@@ -45,6 +45,7 @@ opts
   -y [width]:[prec]:[side] - set y label format
   -c <color> - set color of next data source
   -f - "follow" input
+  -A - "animate" input by following and exit
   -S <milliseconds> - follow rate
   -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴
   -s %<charset>|ascii|unicode - set output charset

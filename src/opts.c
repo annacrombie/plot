@@ -24,6 +24,7 @@ print_usage(FILE *f)
 		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"
 		"  -f - \"follow\" input\n"
+		"  -A - \"animate\" input by following and exit\n"
 		"  -S <milliseconds> - follow rate\n"
 		"  -m - visually merge overlapping lines, e.g. ╯ and ╰ form ┴\n"
 		"  -s %%<charset>|ascii|unicode - set output charset\n"
@@ -209,13 +210,16 @@ parse_opts(struct plot *p, int argc, char **argv)
 	char opt;
 	int lc = 0;
 
-	while ((opt = getopt(argc, argv, "a:b:c:d:fhi:ms:S:x:y:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:ms:S:x:y:")) != -1) {
 		switch (opt) {
 		case 'a':
 			if ((p->average = strtol(optarg, NULL, 10)) < 0) {
 				fprintf(stderr, "invalid average arg\n");
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'A':
+			p->animate = 1;
 			break;
 		case 'b':
 			set_fixed_plot_bounds(optarg, p);
