@@ -112,9 +112,6 @@ set_y_label(char *s, struct y_label *yl)
 	}
 }
 
-/* parse a string like 34:54 with either side of the ':' optional.  If the
- * string is valid, return 1, otherwise return 0.
- */
 static void
 set_plot_dimensions(char *s, struct plot *p)
 {
