@@ -1,0 +1,49 @@
+#!/bin/sh -eu
+
+monitor() {
+	file="$1"
+
+	old_val="$(cat "$file")"
+	while true; do
+		val="$(cat "$file")"
+		printf "$((val-old_val))\n"
+		old_val="$val"
+		sleep 0.5
+	done
+}
+
+cleanup() {
+	kill 0
+}
+
+trap cleanup SIGINT
+
+usage="usage: $0 [clr file [clr file [...]]"
+random="${RANDOM}"
+plot_args=""
+
+if [ $# -lt 2 ]; then
+	die "$usage"
+fi
+
+while [ $# -gt 0 ]; do
+	if [ $# -lt 2 ]; then
+		printf "%s\n" "$usage" >&2
+		die "missing file"
+	fi
+
+	clr=$1
+	file=$2
+	shift 2
+
+	if [ ! -f "$file" ]; then
+		die "file does not exist"
+	fi
+
+	tmp="/tmp/plot_monitor_${random}_${RANDOM}"
+
+	monitor "$file" > "$tmp"&
+	plot_args="$plot_args -c$clr -i$tmp"
+done
+
+plot -f $plot_args

@@ -1,0 +1,7 @@
+option(
+	'build_docs',
+	type: 'combo',
+	choices: ['enabled', 'disabled', 'auto'],
+	value: 'auto',
+	description: 'build documentation, requires scdoc'
+	)

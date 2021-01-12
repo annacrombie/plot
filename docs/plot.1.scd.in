@@ -120,30 +120,17 @@ the color. E.g. R == bright red.
 
 # EXAMPLE
 
-With a little shell scripting, you can use plot to monitor your network usage.
+With a little shell scripting, you can use plot to monitor system information
 
 ```
-#!/bin/sh
+@../examples/monitor@
+```
 
-count_packets() {
-	ifconfig "$1" | grep "$2 packets" | sed 's/^.*packets:\\([0-9]\\+\\).*$/\\1/g'
-}
+Then, to e.g. monitor network usage
 
-monitor_net() {
-	op=$(count_packets $1 $2)
-	while true; do
-		p=$(count_packets $1 $2)
-		echo $((p-op))
-		op=$p
-		sleep 1
-	done
-}
-
-random=$RANDOM
-monitor_net $1 RX > /tmp/${random}rx&
-monitor_net $1 TX > /tmp/${random}tx&
-
-plot -f -cr -i tmp/wlan0rx -cl -i tmp/wlan0tx
+```
+monitor.sh r /sys/class/net/wlan0/statistics/rx_packets \
+	   l /sys/class/net/wlan0/statistics/tx_packets
 ```
 
 # AUTHORS
