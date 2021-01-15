@@ -1,3 +1,5 @@
+#include "posix.h"
+
 #include "follow.h"
 #include "input.h"
 #include "opts.h"

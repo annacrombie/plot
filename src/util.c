@@ -1,3 +1,5 @@
+#include "posix.h"
+
 #include "util.h"
 
 int

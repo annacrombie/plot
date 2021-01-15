@@ -1,3 +1,5 @@
+#include "posix.h"
+
 #include "display.h"
 #include "plot.h"
 #include "util.h"
