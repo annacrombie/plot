@@ -72,5 +72,5 @@ follow_plot(struct plot *p, long ms)
 		nanosleep(&sleep, NULL);
 	}
 
-	printf("\033[%dB\033[?12l\033[?25h\n", height);
+	printf("\033[%dB\033[?12l\033[?25h", height);
 }
