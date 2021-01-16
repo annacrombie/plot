@@ -175,7 +175,7 @@ add_data_from_file(char *filename, struct plot *p, int color)
 	FILE *f = (strcmp(filename, "-") == 0) ? stdin : fopen(optarg, "r");
 
 	if (f == NULL) {
-		fprintf(stderr, "no such file\n");
+		fprintf(stderr, "no such file: %s\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
