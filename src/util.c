@@ -38,7 +38,7 @@ char_to_color(char c)
 	case 'C': n = 96; break;
 	case 'W': n = 97; break;
 	default:
-		fprintf(stderr, "inavlid color char: %c\n", c);
+		fprintf(stderr, "invalid color char: %c\n", c);
 		n = 0;
 		break;
 	}
