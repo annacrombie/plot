@@ -5,3 +5,10 @@ option(
 	value: 'auto',
 	description: 'build documentation, requires scdoc'
 	)
+
+option(
+	'build_tests',
+	type: 'boolean',
+	value: true,
+	description: 'build tests'
+	)

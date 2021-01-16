@@ -45,7 +45,11 @@ src = files([
 	'src/util.c',
 ])
 
-executable('plot', sources: src, dependencies: deps, install: true)
+plot = executable('plot', sources: src, dependencies: deps, install: true)
+
+if get_option('build_tests')
+	subdir('tests')
+endif
 
 if get_option('build_docs') != 'disabled'
 	subdir('docs')
