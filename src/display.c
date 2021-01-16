@@ -157,7 +157,9 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 	printf("%s", plot_charsets[p->charset][pp]);
 
 	if (side == 2) {
-		printf("\033[0m");
+		if (p->color) {
+			printf("\033[0m");
+		}
 		printf(p->y_label.r_fmt, l);
 	}
 }
