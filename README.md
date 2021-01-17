@@ -41,7 +41,7 @@ $ meson test -C build -v --num-processes 1
 # Usage
 
 ```
-plot 0.3.0
+plot 0.4.0
 usage: plot [opts]
 opts
   -i <filename>|- - specify a data source
