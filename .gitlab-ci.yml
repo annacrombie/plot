@@ -1,0 +1,80 @@
+stages:
+  - build
+  - package
+
+build:
+  stage: build
+  image: alpine:edge
+  script:
+    # Install dependencies
+    - apk add g++ meson ninja python3 scdoc valgrind
+    # Prepare packages
+    - rm -rf ./build
+    - meson setup --buildtype=release -Dbuild_docs=enabled -Dtest=true ./build
+    # Build packages
+    - ninja -C ./build
+    # Test packages
+    - ninja -C ./build test
+  artifacts:
+    paths:
+      - build/meson-logs/testlog.txt
+
+.package-template: &package-template
+  stage: package
+  before_script:
+    # Cleanup intermediates
+    - rm -rf ./build/redhat/RPMS/${ARCH}/*.${DIST}.*.rpm
+    # CentOS 6 repositories
+    - |
+      if [ "${DIST}" = 'el6' ]; then
+        sed -i 's/\(^mirrorlist\)/#\1/g; s/#\(baseurl\)/\1/g; s/\($releasever\)/6.10/g; s/mirror\.centos/vault\.centos/g' /etc/yum.repos.d/CentOS-Base.repo
+        yum clean all
+      fi
+    # EPEL repositories
+    - yum install -y epel-release
+    - yum clean all
+    # CentOS 6 EPEL repositories
+    - |
+      if [ "${DIST}" = 'el6' ] && [ "${ARCH}" = 'i386' ]; then
+        sed -i 's/mirrorlist=https/mirrorlist=http/g' /etc/yum.repos.d/epel.repo
+        yum clean all
+      fi
+    # Install dependencies
+    - yum install -y yum-plugin-ovl yum-utils
+    - yum-builddep -y packaging/plot.spec
+  after_script:
+    # Test packages
+    - yum install -y ./build/redhat/RPMS/${ARCH}/*.${DIST}.*.rpm
+  artifacts:
+    paths:
+      - build/redhat/RPMS/*/*.rpm
+
+package:el6:i386:
+  image: toopher/centos-i386:centos6
+  <<: *package-template
+  script:
+    # Build packages
+    - linux32 rpmbuild --define "_topdir ${PWD}/build/redhat" --define "_sourcedir ${PWD}" -bb packaging/plot.spec
+  variables:
+    ARCH: 'i386'
+    DIST: 'el6'
+
+package:el6:x86_64:
+  image: centos:6.10
+  <<: *package-template
+  script:
+    # Build packages
+    - rpmbuild --define "_topdir ${PWD}/build/redhat" --define "_sourcedir ${PWD}" -bb packaging/plot.spec
+  variables:
+    ARCH: 'x86_64'
+    DIST: 'el6'
+
+package:el7:x86_64:
+  image: centos:7.6.1810
+  <<: *package-template
+  script:
+    # Build packages
+    - rpmbuild --define "_topdir ${PWD}/build/redhat" --define "_sourcedir ${PWD}" -bb packaging/plot.spec
+  variables:
+    ARCH: 'x86_64'
+    DIST: 'el7'
