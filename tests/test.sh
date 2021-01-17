@@ -2,6 +2,14 @@
 
 plot="$1"
 
+valgrind_()
+{
+	valgrind --leak-check=yes \
+		--track-origins=yes \
+		--exit-on-first-error=yes \
+		--error-exitcode=1 \
+		"$@"
+}
 
 # Linear line
 seq 1 1000 | "$plot"
@@ -62,8 +70,8 @@ seq 1 100 | shuf >./tests/tmp.2.raw
 rm -f ./tests/tmp.1.raw ./tests/tmp.2.raw
 
 # Memory leaks
-seq 1 100 | shuf | valgrind --leak-check=yes --track-origins=yes "$plot" -c Y -x 5: -y 10:3:1
-seq 1 100 | shuf | timeout -sSIGINT 3 valgrind --leak-check=yes --track-origins=yes "$plot" -c Y -f -x 5: -y 10:3:1 || [ "${?}" -eq 124 ]
+seq 1 100 | shuf | valgrind_ "$plot" -c Y -x 5: -y 10:3:1
+seq 1 100 | shuf | timeout -sSIGINT 3 valgrind_ "$plot" -c Y -f -x 5: -y 10:3:1 || [ "${?}" -eq 124 ]
 
 # Tests result
 echo 'All tests executed successfully'
