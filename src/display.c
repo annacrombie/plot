@@ -15,14 +15,14 @@
    " ╭│╰├╮─┬╯┤┴┼"
  */
 
-static enum plot_peice
+static enum plot_piece
 piece_get(struct plot *p, uint16_t x, uint16_t y)
 {
 	return p->canvas[x][y] & 0xf;
 }
 
 static void
-piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_peice pp)
+piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
 {
 	p->canvas[x][y] = (p->canvas[x][y] & 0xf0) | pp;
 }
@@ -79,10 +79,10 @@ set_custom_plot_charset(char *str, size_t len)
 	}
 }
 
-static enum plot_peice
-next_peice(long y, long cur, long next)
+static enum plot_piece
+next_piece(long y, long cur, long next)
 {
-	enum plot_peice i;
+	enum plot_piece i;
 
 	if (y == cur) {
 		i = next > cur ? PPRightUp : next < cur ? PPRightDown : PPHoriz;
@@ -103,7 +103,7 @@ plot_fill_canvas(struct plot *plot)
 	size_t i, x, y;
 	double ratio;
 	long cur, nxt;
-	enum plot_peice next_p;
+	enum plot_piece next_p;
 
 	memset(plot->canvas, 0, MAX_WIDTH * MAX_HEIGHT);
 
@@ -124,7 +124,7 @@ plot_fill_canvas(struct plot *plot)
 			}
 
 			for (y = 0; y < plot->height; y++) {
-				if ((next_p = next_peice(y, cur, nxt)) == PPBlank) {
+				if ((next_p = next_piece(y, cur, nxt)) == PPBlank) {
 					continue;
 				}
 
@@ -159,15 +159,15 @@ plot_y_label_init_fmts(struct y_label *yl, enum side side)
 static void
 plot_print_y_label(struct plot *p, canvas_elem e, double l, enum side side)
 {
-	enum plot_peice pp, e_peice = e & 0xf;
+	enum plot_piece pp, e_piece = e & 0xf;
 	enum color e_color = e >> 4;
 
 	plot_y_label_init_fmts(&p->y_label, side);
 
 	if (side == side_left) {
-		pp = PPTLeft | ((e_peice & 0x8) >> 2);
+		pp = PPTLeft | ((e_piece & 0x8) >> 2);
 	} else {
-		pp = PPTRight | e_peice;
+		pp = PPTRight | e_piece;
 	}
 
 	if (side == side_left) {

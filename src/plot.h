@@ -18,13 +18,13 @@ enum plot_charset {
 	PCCUSTOM = 2
 };
 
-/* A peice can be defined by the four sides it touches of the cell it contains.
+/* A piece can be defined by the four sides it touches of the cell it contains.
  * The convention used is that the South side is the starting point, and you go
- * counter-clockwise.  So the peice pointing South and North (│) is represented
+ * counter-clockwise.  So the piece pointing South and North (│) is represented
  * by 0101 (binary) or 5.
  *
- * Here is a chart of all the peices
- * peice | binary | hex
+ * Here is a chart of all the pieces
+ * piece | binary | hex
  * ' '   | 0000   | 0
  * ╭     | 0011   | 3
  * │     | 0101   | 5
@@ -39,7 +39,7 @@ enum plot_charset {
  * ┼     | 1111   | f
  */
 
-enum plot_peice {
+enum plot_piece {
 	PPBlank     = 0x0,
 	PPUpRight   = 0x3,
 	PPVert      = 0x5,
@@ -82,7 +82,7 @@ enum side {
 	side_both   = 3,
 };
 
-/* low 4 bits are plot peice
+/* low 4 bits are plot piece
  * high 4 bits are color
  */
 typedef uint8_t canvas_elem;
