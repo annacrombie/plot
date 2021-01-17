@@ -13,40 +13,18 @@ jobs:
     - name: Dependencies
       run: |
         sudo apt update
-        sudo apt install -y gcc meson
+        sudo apt install -y gcc meson valgrind
     - name: Prebuild
       run: |
-        rm -rf ./build/
-        meson ./build/
+        rm -rf build
+        meson setup \
+          --buildtype=release \
+          -Dbuild_docs=disabled \
+          -Dtest=true \
+          build
     - name: Build
       run: |
         ninja -C build
-        sudo ninja -C build install
-    - name: Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: plot
-        path: ./build/plot
-
-  test:
-    needs: build
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2.0.0
-    - name: Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y valgrind
-    - name: Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: plot
-        path: ./build/
-    - name: Install
-      run: |
-        sudo cp -fv ./build/plot /usr/local/bin/
-        sudo chmod 755 /usr/local/bin/plot
     - name: Test
       run: |
-        sh ./tests/test.sh
+        ninja -C build test
