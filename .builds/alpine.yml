@@ -11,7 +11,7 @@ tasks:
       meson setup \
         --buildtype=release \
         -Dbuild_docs=enabled \
-        -Dbuild_tests=true \
+        -Dtest=true \
         build plot
   - build: |
       ninja -C build

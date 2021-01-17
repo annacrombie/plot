@@ -7,8 +7,8 @@ option(
 	)
 
 option(
-	'build_tests',
+	'test',
 	type: 'boolean',
 	value: true,
-	description: 'build tests'
+	description: 'run tests'
 	)
