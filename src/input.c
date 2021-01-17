@@ -139,7 +139,7 @@ pdtry_all_buffers(struct plot *p, int shift)
 	}
 
 	for (i = 0; i < p->datasets; i++) {
-		if (!p->animate && shift && p->data[i].len - min_len > MAX_AHEAD) {
+		if (!(p->flags & plot_flag_animate) && shift && p->data[i].len - min_len > MAX_AHEAD) {
 			continue;
 		}
 

@@ -57,7 +57,7 @@ follow_plot(struct plot *p, long ms)
 				}
 			}
 
-			if (p->animate && eof) {
+			if ((p->flags & plot_flag_animate) && eof) {
 				loop = 0;
 			}
 		}

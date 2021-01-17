@@ -23,15 +23,12 @@ plot_init(struct plot *plot)
 	plot->height = 24;
 	plot->width = 80;
 
-	plot->animate = 0;
-	plot->follow = 0;
+	plot->flags = 0;
 	plot->follow_rate = 100;
 
 	plot->average = 1;
 
 	plot->datasets = 0;
-
-	plot->fixed_bounds = 0;
 }
 
 static void
@@ -48,7 +45,7 @@ void
 plot_add(struct plot *plot, FILE *f, int color)
 {
 	if (color != 0) {
-		plot->color = 1;
+		plot->flags |= plot_flag_color;
 	}
 
 	plot_data_init(&plot->data[plot->datasets], f, color);
@@ -115,7 +112,7 @@ plot_plot(struct plot *plot)
 
 
 	/* Determine the max and min of the array*/
-	if (!plot->fixed_bounds) {
+	if (!(plot->flags & plot_flag_fixed_bounds)) {
 		plot->bounds = plot_data_get_bounds(plot->datasets, plot->data);
 	}
 

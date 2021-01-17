@@ -158,7 +158,7 @@ set_fixed_plot_bounds(char *s, struct plot *p)
 {
 	double d;
 
-	p->fixed_bounds = 1;
+	p->flags |= plot_flag_fixed_bounds;
 
 	if (parse_next_double(&s, &d)) {
 		p->bounds.min = d;
@@ -219,7 +219,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			}
 			break;
 		case 'A':
-			p->animate = 1;
+			p->flags |= plot_flag_animate;
 			break;
 		case 'b':
 			set_fixed_plot_bounds(optarg, p);
@@ -228,14 +228,14 @@ parse_opts(struct plot *p, int argc, char **argv)
 			set_plot_dimensions(optarg, p);
 			break;
 		case 'f':
-			p->follow = 1;
+			p->flags |= plot_flag_follow;
 			break;
 		case 'i':
 			add_data_from_file(optarg, p, lc);
 			lc = 0;
 			break;
 		case 'm':
-			p->merge_plot_peices = 1;
+			p->flags |= plot_flag_merge_plot_pieces;
 			break;
 		case 's':
 			p->charset = set_charset(optarg);

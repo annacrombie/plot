@@ -118,6 +118,14 @@ struct plot_data {
 	} avg;
 };
 
+enum plot_flags {
+	plot_flag_animate           = 1 << 0,
+	plot_flag_follow            = 1 << 1,
+	plot_flag_color             = 1 << 2,
+	plot_flag_merge_plot_pieces = 1 << 3,
+	plot_flag_fixed_bounds      = 1 << 4,
+};
+
 struct plot {
 	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct x_label x_label;
@@ -130,12 +138,12 @@ struct plot {
 	unsigned int width;
 	long follow_rate;
 	long average;
-	int animate;
-	int follow;
-	int color;
-	int merge_plot_peices;
-	int fixed_bounds;
 	struct plot_bounds bounds;
+	uint32_t height, width;
+	uint32_t datasets;
+	uint32_t follow_rate;
+	uint32_t average;
+	uint32_t flags;
 };
 
 void plot_init(struct plot *plot);

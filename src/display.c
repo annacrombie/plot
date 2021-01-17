@@ -128,7 +128,7 @@ plot_fill_canvas(struct plot *plot)
 					continue;
 				}
 
-				if (plot->merge_plot_peices) {
+				if (plot->flags & plot_flag_merge_plot_pieces) {
 					next_p |= piece_get(plot, x, y);
 				}
 
@@ -167,7 +167,7 @@ plot_print_y_label(struct plot *p, canvas_elem e, double l, int side)
 	pp = side == 1 ? PPTLeft | ((e_peice & 0x8) >> 2) : PPTRight | e_peice;
 
 	if (side == 1) {
-		if (p->color) {
+		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
 		printf(p->y_label.l_fmt, l);
@@ -175,14 +175,14 @@ plot_print_y_label(struct plot *p, canvas_elem e, double l, int side)
 
 	if (pp == PPCross && e_color > 0) {
 		printf("\033[%dm", color_to_ansi_escape_color(e_color));
-	} else if (p->color) {
+	} else if (p->flags & plot_flag_color) {
 		printf("\033[0m");
 	}
 
 	printf("%s", plot_charsets[p->charset][pp]);
 
 	if (side == 2) {
-		if (p->color) {
+		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
 		printf(p->y_label.r_fmt, l);
@@ -220,7 +220,7 @@ plot_print_canvas(struct plot *plot)
 		printf("\n");
 	}
 
-	if (plot->color) {
+	if (plot->flags & plot_flag_color) {
 		printf("\033[0m");
 	}
 }
