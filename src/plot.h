@@ -73,6 +73,15 @@ enum color {
 	clr_W,
 };
 
+enum side {
+	side_neither = 0,
+	side_bottom = 1 << 0,
+	side_top    = 1 << 1,
+	side_left   = 1 << 0,
+	side_right  = 1 << 1,
+	side_both   = 3,
+};
+
 /* low 4 bits are plot peice
  * high 4 bits are color
  */
@@ -81,9 +90,9 @@ typedef uint8_t canvas_elem;
 struct y_label {
 	unsigned int width;
 	unsigned int prec;
-	int side;
 	char r_fmt[CHARBUF + 1];
 	char l_fmt[CHARBUF + 1];
+	enum side side;
 };
 
 struct x_label {
@@ -91,8 +100,8 @@ struct x_label {
 	unsigned int every;
 	long start;
 	enum color color;
-	int side;
 	char label[CHARBUF + 1];
+	enum side side;
 };
 
 struct input {

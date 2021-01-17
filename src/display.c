@@ -143,13 +143,13 @@ static char *yl_l_fmt_fmt = "%%%d.%df ";
 static char *yl_r_fmt_fmt = " %%-%d.%df";
 
 static void
-plot_y_label_init_fmts(struct y_label *yl, int side)
+plot_y_label_init_fmts(struct y_label *yl, enum side side)
 {
-	if (side == 1) {
+	if (side == side_left) {
 		if (!*yl->l_fmt) {
 			snprintf(yl->l_fmt, CHARBUF, yl_l_fmt_fmt, yl->width, yl->prec);
 		}
-	} else if (side == 2) {
+	} else if (side == side_right) {
 		if (!*yl->r_fmt) {
 			snprintf(yl->r_fmt, CHARBUF, yl_r_fmt_fmt, yl->width, yl->prec);
 		}
@@ -157,16 +157,20 @@ plot_y_label_init_fmts(struct y_label *yl, int side)
 }
 
 static void
-plot_print_y_label(struct plot *p, canvas_elem e, double l, int side)
+plot_print_y_label(struct plot *p, canvas_elem e, double l, enum side side)
 {
 	enum plot_peice pp, e_peice = e & 0xf;
 	enum color e_color = e >> 4;
 
 	plot_y_label_init_fmts(&p->y_label, side);
 
-	pp = side == 1 ? PPTLeft | ((e_peice & 0x8) >> 2) : PPTRight | e_peice;
+	if (side == side_left) {
+		pp = PPTLeft | ((e_peice & 0x8) >> 2);
+	} else {
+		pp = PPTRight | e_peice;
+	}
 
-	if (side == 1) {
+	if (side == side_left) {
 		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
@@ -181,7 +185,7 @@ plot_print_y_label(struct plot *p, canvas_elem e, double l, int side)
 
 	printf("%s", plot_charsets[p->charset][pp]);
 
-	if (side == 2) {
+	if (side == side_right) {
 		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
@@ -196,7 +200,7 @@ plot_print_canvas(struct plot *plot)
 	enum color color;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		if ((plot->y_label.side & 1) == 1) {
+		if (plot->y_label.side & side_left) {
 			plot_print_y_label(plot, plot->canvas[0][y], plot->labels[y], 1);
 		}
 
@@ -213,7 +217,7 @@ plot_print_canvas(struct plot *plot)
 			}
 		}
 
-		if ((plot->y_label.side & 2) == 2) {
+		if (plot->y_label.side & side_right) {
 			plot_print_y_label(plot, plot->canvas[plot->width - 1][y], plot->labels[y], 2);
 		}
 
@@ -256,7 +260,12 @@ plot_print_x_label(struct plot *p, char *buf)
 		tmp = 0;
 	}
 
-	end = (p->y_label.side & 1 ? p->y_label.width + 2 : 0) + tmp;
+	if (p->y_label.side & side_left) {
+		end = p->y_label.width + 2 + tmp;
+	} else {
+		end = tmp;
+	}
+
 	for (i = 0; i < end; i++) {
 		buf[printed++] = ' ';
 	}
@@ -292,14 +301,14 @@ plot_display(struct plot *plot)
 	/* create the graph */
 	plot_fill_canvas(plot);
 
-	if (plot->x_label.side & 2) {
+	if (plot->x_label.side & side_top) {
 		printf("%s", x_label);
 	}
 
 	/* print the graph with labels */
 	plot_print_canvas(plot);
 
-	if (plot->x_label.side & 1) {
+	if (plot->x_label.side & side_bottom) {
 		printf("%s", x_label);
 	}
 }

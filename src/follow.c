@@ -34,7 +34,7 @@ follow_plot(struct plot *p, long ms)
 	int height = p->height;
 
 	if (p->x_label.every && p->x_label.side) {
-		height += p->x_label.side == 3 ? 2 : 1;
+		height += p->x_label.side == side_both ? 2 : 1;
 	}
 
 	struct timespec sleep = {
