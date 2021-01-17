@@ -26,7 +26,6 @@ install_signal_handler(void)
 	sigaction(SIGINT, &sigact, NULL);
 }
 
-
 void
 follow_plot(struct plot *p, long ms)
 {
@@ -53,8 +52,7 @@ follow_plot(struct plot *p, long ms)
 			for (i = 0; i < p->datasets; i++) {
 				if (feof(p->data[i].src.src)) {
 					clearerr(p->data[i].src.src);
-				}
-				else {
+				} else {
 					eof = 0;
 				}
 			}

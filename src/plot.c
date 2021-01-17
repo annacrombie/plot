@@ -11,7 +11,6 @@
 
 #define PLOT_DEFAULT_BOUND 8
 
-
 void
 plot_init(struct plot *plot)
 {

@@ -3,8 +3,8 @@
 
 #define PLOT_VERSION "0.3.0"
 
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #define INBUF 512
 #define CHARBUF 31
@@ -54,11 +54,29 @@ enum plot_peice {
 	PPCross     = 0xf,
 };
 
-struct canvas_elem {
-	enum plot_peice peice;
-	unsigned int color;
+enum color {
+	clr_b,
+	clr_r,
+	clr_g,
+	clr_y,
+	clr_l,
+	clr_m,
+	clr_c,
+	clr_w,
+	clr_B,
+	clr_R,
+	clr_G,
+	clr_Y,
+	clr_L,
+	clr_M,
+	clr_C,
+	clr_W,
 };
 
+/* low 4 bits are plot peice
+ * high 4 bits are color
+ */
+typedef uint8_t canvas_elem;
 
 struct y_label {
 	unsigned int width;
@@ -72,7 +90,7 @@ struct x_label {
 	unsigned int mod;
 	unsigned int every;
 	long start;
-	unsigned int color;
+	enum color color;
 	int side;
 	char label[CHARBUF + 1];
 };
@@ -92,7 +110,7 @@ struct plot_bounds {
 struct plot_data {
 	double data[MAX_WIDTH];
 	size_t len;
-	unsigned int color;
+	enum color color;
 	struct input src;
 	struct {
 		double sum;
@@ -101,9 +119,9 @@ struct plot_data {
 };
 
 struct plot {
+	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct x_label x_label;
 	struct y_label y_label;
-	struct canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
 	long normalized[MAX_DATA][MAX_WIDTH];
 	double labels[MAX_HEIGHT];
 	struct plot_data data[MAX_DATA];

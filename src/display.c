@@ -1,5 +1,7 @@
 #include "posix.h"
 
+#include <string.h>
+
 #include "display.h"
 #include "plot.h"
 #include "util.h"
@@ -11,6 +13,29 @@
    " ╭│╰├╮─┬╯┤┴┼"
  */
 
+static enum plot_peice
+piece_get(struct plot *p, uint16_t x, uint16_t y)
+{
+	return p->canvas[x][y] & 0xf;
+}
+
+static void
+piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_peice pp)
+{
+	p->canvas[x][y] |= pp;
+}
+
+static uint8_t
+color_get(struct plot *p, uint16_t x, uint16_t y)
+{
+	return p->canvas[x][y] >> 4;
+}
+
+static void
+color_set(struct plot *p, uint16_t x, uint16_t y, enum color c)
+{
+	p->canvas[x][y] |= c << 4;
+}
 
 static char plot_charsets[][16][4] = {
 	{
@@ -89,11 +114,11 @@ plot_write_norm(struct plot *plot, long *norm)
 			}
 
 			if (plot->merge_plot_peices) {
-				next = plot->canvas[x - 2][y].peice | next;
+				next = piece_get(plot, x - 2, y) | next;
 			}
 
-			plot->canvas[x - 2][y].color = norm[1];
-			plot->canvas[x - 2][y].peice = next;
+			color_set(plot, x - 2, y, norm[1]);
+			piece_set(plot, x - 2, y, next);
 		}
 	}
 }
@@ -101,14 +126,9 @@ plot_write_norm(struct plot *plot, long *norm)
 static void
 plot_fill_canvas(struct plot *plot)
 {
-	size_t x, y, i;
+	size_t i;
 
-	for (x = 0; x < plot->width; x++) {
-		for (y = 0; y < plot->height; y++) {
-			plot->canvas[x][y].color = 0;
-			plot->canvas[x][y].peice = PPBlank;
-		}
-	}
+	memset(plot->canvas, 0, MAX_WIDTH * MAX_HEIGHT);
 
 	for (i = 0; i < plot->datasets; i++) {
 		plot_write_norm(plot, plot->normalized[i]);
@@ -133,13 +153,14 @@ plot_y_label_init_fmts(struct y_label *yl, int side)
 }
 
 static void
-plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
+plot_print_y_label(struct plot *p, canvas_elem e, double l, int side)
 {
-	enum plot_peice pp;
+	enum plot_peice pp, e_peice = e & 0xf;
+	enum color e_color = e >> 4;
 
 	plot_y_label_init_fmts(&p->y_label, side);
 
-	pp = side == 1 ? PPTLeft | ((e.peice & 0x8) >> 2) : PPTRight | e.peice;
+	pp = side == 1 ? PPTLeft | ((e_peice & 0x8) >> 2) : PPTRight | e_peice;
 
 	if (side == 1) {
 		if (p->color) {
@@ -148,8 +169,8 @@ plot_print_y_label(struct plot *p, struct canvas_elem e, double l, int side)
 		printf(p->y_label.l_fmt, l);
 	}
 
-	if (pp == PPCross && e.color > 0) {
-		printf("\033[%dm", e.color);
+	if (pp == PPCross && e_color > 0) {
+		printf("\033[%dm", color_to_ansi_escape_color(e_color));
 	} else if (p->color) {
 		printf("\033[0m");
 	}
@@ -168,6 +189,7 @@ static void
 plot_print_canvas(struct plot *plot)
 {
 	long x, y;
+	enum color color;
 
 	for (y = plot->height - 1; y >= 0; y--) {
 		if ((plot->y_label.side & 1) == 1) {
@@ -175,14 +197,15 @@ plot_print_canvas(struct plot *plot)
 		}
 
 		for (x = 0; x < (long)plot->width; x++) {
-			if (plot->canvas[x][y].color > 0) {
-				printf("\033[%dm", plot->canvas[x][y].color);
+			color = color_get(plot, x, y);
+			if (color) {
+				printf("\033[%dm", color_to_ansi_escape_color(color));
 			}
 
-			printf("%s", plot_charsets[plot->charset][plot->canvas[x][y].peice]);
+			printf("%s", plot_charsets[plot->charset][piece_get(plot, x, y)]);
 
-			if (plot->canvas[x][y].color > 0) {
-				printf("\033[%dm", 0);
+			if (color) {
+				printf("\033[0m");
 			}
 		}
 
@@ -242,7 +265,7 @@ plot_print_x_label(struct plot *p, char *buf)
 
 		if (tmp == 0 && p->x_label.color) {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
-				fmt[1], p->x_label.color, tmp);
+				fmt[1], color_to_ansi_escape_color(p->x_label.color), tmp);
 		} else {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
 				fmt[0], tmp);

@@ -1,5 +1,7 @@
 #include "posix.h"
 
+#include <assert.h>
+
 #include "util.h"
 
 int
@@ -16,27 +18,52 @@ is_digit(char c)
 }
 
 unsigned int
+color_to_ansi_escape_color(enum color color)
+{
+	switch (color) {
+	case clr_b: return 30;
+	case clr_r: return 31;
+	case clr_g: return 32;
+	case clr_y: return 33;
+	case clr_l: return 34;
+	case clr_m: return 35;
+	case clr_c: return 36;
+	case clr_w: return 37;
+	case clr_B: return 90;
+	case clr_R: return 91;
+	case clr_G: return 92;
+	case clr_Y: return 93;
+	case clr_L: return 94;
+	case clr_M: return 95;
+	case clr_C: return 96;
+	case clr_W: return 97;
+	default: assert(0); return 0;
+	}
+
+}
+
+enum color
 char_to_color(char c)
 {
-	unsigned int n;
+	enum color n;
 
 	switch (c) {
-	case 'b': n = 30; break;
-	case 'r': n = 31; break;
-	case 'g': n = 32; break;
-	case 'y': n = 33; break;
-	case 'l': n = 34; break;
-	case 'm': n = 35; break;
-	case 'c': n = 36; break;
-	case 'w': n = 37; break;
-	case 'B': n = 90; break;
-	case 'R': n = 91; break;
-	case 'G': n = 92; break;
-	case 'Y': n = 93; break;
-	case 'L': n = 94; break;
-	case 'M': n = 95; break;
-	case 'C': n = 96; break;
-	case 'W': n = 97; break;
+	case 'b': n = clr_b; break;
+	case 'r': n = clr_r; break;
+	case 'g': n = clr_g; break;
+	case 'y': n = clr_y; break;
+	case 'l': n = clr_l; break;
+	case 'm': n = clr_m; break;
+	case 'c': n = clr_c; break;
+	case 'w': n = clr_w; break;
+	case 'B': n = clr_B; break;
+	case 'R': n = clr_R; break;
+	case 'G': n = clr_G; break;
+	case 'Y': n = clr_Y; break;
+	case 'L': n = clr_L; break;
+	case 'M': n = clr_M; break;
+	case 'C': n = clr_C; break;
+	case 'W': n = clr_W; break;
 	default:
 		fprintf(stderr, "invalid color char: %c\n", c);
 		n = 0;
