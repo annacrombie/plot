@@ -1,0 +1,19 @@
+image: alpine/edge
+sources:
+  - https://github.com/annacrombie/plot
+packages:
+  - meson
+  - ninja
+  - scdoc
+  - valgrind
+tasks:
+  - setup: |
+      meson setup \
+        --buildtype=release \
+        -Dbuild_docs=enabled \
+        -Dbuild_tests=true \
+        build plot
+  - build: |
+      ninja -C build
+  - test: |
+      ninja -C build test
