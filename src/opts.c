@@ -209,14 +209,16 @@ parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
 	int lc = 0;
+	long tmp;
 
 	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:ms:S:x:y:")) != -1) {
 		switch (opt) {
 		case 'a':
-			if ((p->average = strtol(optarg, NULL, 10)) < 0) {
+			if ((tmp = strtol(optarg, NULL, 10)) < 0) {
 				fprintf(stderr, "invalid average arg\n");
 				exit(EXIT_FAILURE);
 			}
+			p->average = tmp;
 			break;
 		case 'A':
 			p->flags |= plot_flag_animate;

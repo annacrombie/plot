@@ -88,43 +88,36 @@ enum side {
 typedef uint8_t canvas_elem;
 
 struct y_label {
-	unsigned int width;
-	unsigned int prec;
 	char r_fmt[CHARBUF + 1];
 	char l_fmt[CHARBUF + 1];
+	uint32_t width, prec;
 	enum side side;
 };
 
 struct x_label {
-	unsigned int mod;
-	unsigned int every;
-	long start;
-	enum color color;
 	char label[CHARBUF + 1];
+	int64_t start;
+	uint32_t mod, every;
+	enum color color;
 	enum side side;
 };
 
 struct input {
 	char buf[INBUF];
 	FILE *src;
-	size_t rem;
-	size_t size;
+	size_t rem, size;
 };
 
 struct plot_bounds {
-	double max;
-	double min;
+	double max, min;
 };
 
 struct plot_data {
 	double data[MAX_WIDTH];
+	struct input src;
+	struct { double sum; uint32_t count; } avg;
 	size_t len;
 	enum color color;
-	struct input src;
-	struct {
-		double sum;
-		int count;
-	} avg;
 };
 
 enum plot_flags {
@@ -137,17 +130,12 @@ enum plot_flags {
 
 struct plot {
 	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
+	struct plot_data data[MAX_DATA];
+	double labels[MAX_HEIGHT];
+	struct plot_bounds bounds;
 	struct x_label x_label;
 	struct y_label y_label;
-	double labels[MAX_HEIGHT];
-	struct plot_data data[MAX_DATA];
 	enum plot_charset charset;
-	size_t datasets;
-	unsigned int height;
-	unsigned int width;
-	long follow_rate;
-	long average;
-	struct plot_bounds bounds;
 	uint32_t height, width;
 	uint32_t datasets;
 	uint32_t follow_rate;
