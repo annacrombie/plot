@@ -1,5 +1,7 @@
 #include "posix.h"
 
+#include <math.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "display.h"
@@ -22,7 +24,7 @@ piece_get(struct plot *p, uint16_t x, uint16_t y)
 static void
 piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_peice pp)
 {
-	p->canvas[x][y] |= pp;
+	p->canvas[x][y] = (p->canvas[x][y] & 0xf0) | pp;
 }
 
 static uint8_t
@@ -34,7 +36,7 @@ color_get(struct plot *p, uint16_t x, uint16_t y)
 static void
 color_set(struct plot *p, uint16_t x, uint16_t y, enum color c)
 {
-	p->canvas[x][y] |= c << 4;
+	p->canvas[x][y] = c << 4 | (p->canvas[x][y] & 0xf);
 }
 
 static char plot_charsets[][16][4] = {
@@ -96,42 +98,44 @@ next_peice(long y, long cur, long next)
 }
 
 static void
-plot_write_norm(struct plot *plot, long *norm)
-{
-	long x, y;
-	enum plot_peice next;
-
-	for (x = 2; x < norm[0] && x - 2 < (long)plot->width; x++) {
-		for (y = 0; y < (long)plot->height; y++) {
-			next = next_peice(
-				y,
-				norm[x],
-				x + 1 >= norm[0] ? norm[x] :  norm[x + 1]
-				);
-
-			if (next == PPBlank) {
-				continue;
-			}
-
-			if (plot->merge_plot_peices) {
-				next = piece_get(plot, x - 2, y) | next;
-			}
-
-			color_set(plot, x - 2, y, norm[1]);
-			piece_set(plot, x - 2, y, next);
-		}
-	}
-}
-
-static void
 plot_fill_canvas(struct plot *plot)
 {
-	size_t i;
+	size_t i, x, y;
+	double ratio;
+	long cur, nxt;
+	enum plot_peice next_p;
 
 	memset(plot->canvas, 0, MAX_WIDTH * MAX_HEIGHT);
 
+	ratio = (double)(plot->height - 1) / (plot->bounds.max - plot->bounds.min);
+
 	for (i = 0; i < plot->datasets; i++) {
-		plot_write_norm(plot, plot->normalized[i]);
+		if (!plot->data[i].len) {
+			continue;
+		}
+
+		nxt = lround((plot->data[i].data[0] - plot->bounds.min) * ratio);
+
+		for (x = 0; x < plot->data[i].len; x++) {
+			cur = nxt;
+
+			if (x < plot->data[i].len - 1) {
+				nxt = lround((plot->data[i].data[x + 1] - plot->bounds.min) * ratio);
+			}
+
+			for (y = 0; y < plot->height; y++) {
+				if ((next_p = next_peice(y, cur, nxt)) == PPBlank) {
+					continue;
+				}
+
+				if (plot->merge_plot_peices) {
+					next_p |= piece_get(plot, x, y);
+				}
+
+				color_set(plot, x, y, plot->data[i].color);
+				piece_set(plot, x, y, next_p);
+			}
+		}
 	}
 }
 

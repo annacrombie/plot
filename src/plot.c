@@ -1,7 +1,6 @@
 #include "posix.h"
 
 #include <float.h>
-#include <math.h>
 #include <string.h>
 
 #include "display.h"
@@ -96,25 +95,6 @@ plot_make_labels(struct plot *p)
 	}
 }
 
-static void
-plot_normalize_data(struct plot *p)
-{
-	size_t i, j;
-
-	double ratio = (double)(p->height - 1) / (p->bounds.max - p->bounds.min);
-
-	for (j = 0; j < p->datasets; j++) {
-		//d = ;
-
-		p->normalized[j][0] = p->data[j].len + 2;
-		p->normalized[j][1] = p->data[j].color;
-		for (i = 2; i < (size_t)p->normalized[j][0]; i++) {
-			p->normalized[j][i] = lround(
-				(p->data[j].data[i - 2] - p->bounds.min) * ratio);
-		}
-	}
-}
-
 int
 plot_plot(struct plot *plot)
 {
@@ -140,8 +120,6 @@ plot_plot(struct plot *plot)
 	}
 
 	plot_make_labels(plot);
-
-	plot_normalize_data(plot);
 
 	plot_display(plot);
 

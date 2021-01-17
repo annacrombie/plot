@@ -122,7 +122,6 @@ struct plot {
 	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct x_label x_label;
 	struct y_label y_label;
-	long normalized[MAX_DATA][MAX_WIDTH];
 	double labels[MAX_HEIGHT];
 	struct plot_data data[MAX_DATA];
 	enum plot_charset charset;
