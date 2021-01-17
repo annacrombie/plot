@@ -17,11 +17,11 @@ if scdoc.found()
 
 	plot_1_scd = custom_target(
 		'plot.1.scd',
-		input: 'plot.1.scd.in',
+		input: ['plot.1.scd.in', '../examples/monitor'],
 		output: 'plot.1.scd',
 		capture: true,
 		command: [
-			inserter, '@INPUT@'
+			inserter, '@INPUT0@', '@INPUT1@'
 		]
 	)
 

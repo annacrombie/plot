@@ -130,7 +130,7 @@ the color. E.g. R == bright red.
 With a little shell scripting, you can use plot to monitor system information
 
 ```
-@../examples/monitor@
+@0@
 ```
 
 Then, to e.g. monitor network usage
