@@ -25,7 +25,7 @@ read_numbers(struct input *in, double *dest, size_t max)
 {
 	char *endptr = NULL;
 	size_t i, read;
-	size_t len = 0, lr;
+	size_t len = 0, lr = 0;
 
 	if (in->rem >= buf_size) {
 		buf_size += in->rem;
