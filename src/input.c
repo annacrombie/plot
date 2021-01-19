@@ -66,7 +66,7 @@ shift_arr(double *arr, size_t off, size_t amnt)
 }
 
 static int
-pdtry_buffer(struct plot_data *pd, size_t max_w, long *shifted, size_t shift, uint32_t avg_by)
+pdtry_buffer(struct plot_data *pd, size_t max_w, uint32_t *shifted, size_t shift, uint32_t avg_by)
 {
 	size_t read_len, len = 0, i;
 	double read_arr[TMP_ARR_SIZE];
@@ -131,7 +131,6 @@ pdtry_all_buffers(struct plot *p, int shift)
 		 shifts[MAX_DATA] = { 0 },
 		 maxshift = 0,
 		 min_len = p->width;
-	long shifted = 0;
 
 	if (shift) {
 		for (i = 0; i < p->datasets; i++) {
@@ -146,14 +145,10 @@ pdtry_all_buffers(struct plot *p, int shift)
 			continue;
 		}
 
-		read |= pdtry_buffer(&p->data[i], p->width, &shifted, shift, p->average);
+		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], shift, p->average);
 
-		if (shift && shifted) {
-			shifts[i] = shifted;
-			if (shifted > maxshift) {
-				maxshift = shifted;
-			}
-			shifted = 0;
+		if (shifts[i] > maxshift) {
+			maxshift = shifts[i];
 		}
 	}
 
