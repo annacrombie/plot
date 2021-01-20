@@ -41,7 +41,7 @@ read_numbers(struct input *in, double *dest, size_t max)
 
 		lr = i;
 		dest[len] = strtod(&in->buf[i], &endptr);
-		(len)++;
+		len++;
 
 		if (len == max) {
 			break;
@@ -87,27 +87,23 @@ pd_avg(struct plot_data *pd, double *read_arr, double *arr, size_t *read_len, ui
 static int
 pdtry_buffer_noshift(struct plot_data *pd, size_t max_w, uint32_t avg_by)
 {
-	size_t read_len, len = 0;
+	size_t len = 0;
 	double read_arr[TMP_ARR_SIZE];
 	double arr[TMP_ARR_SIZE];
 
 	if (pd->len >= max_w) {
 		return 0;
-	} else if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
+	} else if ((len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
 		return 0;
 	}
 
-	pd_avg(pd, read_arr, arr, &read_len, avg_by);
-	len = read_len;
+	pd_avg(pd, read_arr, arr, &len, avg_by);
 
 	if (len >= max_w) {
 		memcpy(pd->data, arr, max_w * sizeof(double));
-
 		pd->len = max_w;
 		return 1;
-	}
-
-	if (len + pd->len > max_w) {
+	} else if(len + pd->len > max_w) {
 		len = max_w - pd->len;
 	}
 
@@ -115,28 +111,25 @@ pdtry_buffer_noshift(struct plot_data *pd, size_t max_w, uint32_t avg_by)
 	pd->len += len;
 	return 1;
 }
+
 static int
 pdtry_buffer_shift(struct plot_data *pd, size_t max_w, uint32_t *shifted, uint32_t avg_by)
 {
-	size_t read_len, len = 0;
+	size_t len = 0;
 	double read_arr[TMP_ARR_SIZE];
 	double arr[TMP_ARR_SIZE];
 
-	if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
+	if ((len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
 		return 0;
 	}
 
-	pd_avg(pd, read_arr, arr, &read_len, avg_by);
-	len = read_len;
+	pd_avg(pd, read_arr, arr, &len, avg_by);
 
 	if (len >= max_w) {
 		memcpy(pd->data, &arr[len - max_w], max_w * sizeof(double));
-
 		pd->len = max_w;
 		return 1;
-	}
-
-	if (len + pd->len > max_w) {
+	} else if (len + pd->len > max_w) {
 		*shifted = max_w - pd->len + len;
 		if (pd->len < *shifted) {
 			pd->len = 0;
@@ -205,5 +198,5 @@ pdtry_all_buffers(struct plot *p)
 		for (i = 0, read = 0; i < p->datasets; i++) {
 			read |= pdtry_buffer_noshift(&p->data[i], p->width, p->average);
 		}
-	}while(read);
+	} while(read);
 }
