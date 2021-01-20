@@ -65,24 +65,14 @@ shift_arr(double *arr, size_t off, size_t amnt)
 	memmove(arr, arr + off, sizeof(double) * (amnt));
 }
 
-static int
-pdtry_buffer(struct plot_data *pd, size_t max_w, uint32_t *shifted, size_t shift, uint32_t avg_by)
+void
+pd_avg(struct plot_data *pd, double *read_arr, double *arr, size_t *read_len, uint32_t avg_by)
 {
-	size_t read_len, len = 0, i;
-	double read_arr[TMP_ARR_SIZE];
-	double arr[TMP_ARR_SIZE];
-
-	if (!shift && pd->len >= max_w) {
-		return 0;
-	} else if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
-		return 0;
-	}
-
+	size_t i,len = 0;
 	if (avg_by == 1) {
-		memcpy(arr, read_arr, sizeof(double) * read_len);
-		len = read_len;
+		memcpy(arr, read_arr, sizeof(double) * (*read_len));
 	} else {
-		for (i = 0; i < read_len; ++i) {
+		for (i = 0; i < (*read_len); ++i) {
 			pd->avg.sum += read_arr[i];
 
 			if (++pd->avg.count >= avg_by) {
@@ -92,29 +82,67 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, uint32_t *shifted, size_t shift
 			}
 		}
 	}
+}
+
+static int
+pdtry_buffer_noshift(struct plot_data *pd, size_t max_w, uint32_t avg_by)
+{
+	size_t read_len, len = 0;
+	double read_arr[TMP_ARR_SIZE];
+	double arr[TMP_ARR_SIZE];
+
+	if (pd->len >= max_w) {
+		return 0;
+	} else if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
+		return 0;
+	}
+
+	pd_avg(pd, read_arr, arr, &read_len, avg_by);
+	len = read_len;
 
 	if (len >= max_w) {
-		if (shift) {
-			memcpy(pd->data, &arr[len - max_w], max_w * sizeof(double));
-		}else {
-			memcpy(pd->data, arr, max_w * sizeof(double));
-		}
+		memcpy(pd->data, arr, max_w * sizeof(double));
 
 		pd->len = max_w;
 		return 1;
 	}
 
 	if (len + pd->len > max_w) {
-		if (shift) {
-			*shifted = shift = max_w - pd->len + len;
-			if (pd->len < shift) {
-				pd->len = 0;
-			} else {
-				pd->len -= shift;
-				shift_arr(pd->data, shift, pd->len);
-			}
+		len = max_w - pd->len;
+	}
+
+	memcpy(&pd->data[pd->len], arr, sizeof(double) * len);
+	pd->len += len;
+	return 1;
+}
+static int
+pdtry_buffer_shift(struct plot_data *pd, size_t max_w, uint32_t *shifted, uint32_t avg_by)
+{
+	size_t read_len, len = 0;
+	double read_arr[TMP_ARR_SIZE];
+	double arr[TMP_ARR_SIZE];
+
+	if ((read_len = read_numbers(&pd->src, read_arr, TMP_ARR_SIZE)) == 0) {
+		return 0;
+	}
+
+	pd_avg(pd, read_arr, arr, &read_len, avg_by);
+	len = read_len;
+
+	if (len >= max_w) {
+		memcpy(pd->data, &arr[len - max_w], max_w * sizeof(double));
+
+		pd->len = max_w;
+		return 1;
+	}
+
+	if (len + pd->len > max_w) {
+		*shifted = max_w - pd->len + len;
+		if (pd->len < *shifted) {
+			pd->len = 0;
 		} else {
-			len = max_w - pd->len;
+			pd->len -= *shifted;
+			shift_arr(pd->data, *shifted, pd->len);
 		}
 	}
 
@@ -143,7 +171,7 @@ pdtry_all_buffers(struct plot *p)
 			continue;
 		}
 
-		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 1, p->average);
+		read |= pdtry_buffer_shift(&p->data[i], p->width, &shifts[i], p->average);
 
 		if (shifts[i] > maxshift) {
 			maxshift = shifts[i];
@@ -171,12 +199,11 @@ pdtry_all_buffers(struct plot *p)
  void
  pdread_all_available(struct plot *p)
  {
-	uint32_t read,
-		shifts[MAX_DATA] = { 0 };
+	uint32_t read;
 	size_t i;
 	do{
 		for (i = 0, read = 0; i < p->datasets; i++) {
-			read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 0, p->average);
+			read |= pdtry_buffer_noshift(&p->data[i], p->width, p->average);
 		}
 	}while(read);
 }
