@@ -170,10 +170,24 @@ pdtry_all_buffers(struct plot *p, int shift)
 	return read;
 }
 
-void
-pdread_all_available(struct plot *p)
+int
+pdread_no_shift(struct plot *p)
 {
-	while (pdtry_all_buffers(p, 0)) {
-		/* nothing */
+	size_t i;
+	uint32_t read = 0,
+		 shifts[MAX_DATA] = { 0 };
+
+	for (i = 0; i < p->datasets; i++) {
+		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 0, p->average);
 	}
+	return read;
+}
+
+ void
+ pdread_all_available(struct plot *p)
+ {
+	uint32_t read = 0;
+	do{
+		read = pdread_no_shift(p);
+	}while(read);
 }

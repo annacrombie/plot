@@ -17,7 +17,7 @@ main(int argc, char **argv)
 		plot_add(&p, stdin, lc);
 	}
 
-	if (p.flags & plot_flag_animate || p.flags & plot_flag_follow) {
+	if (p.flags & (plot_flag_animate|plot_flag_follow)) {
 		set_input_buffer_size(8);
 		follow_plot(&p, p.follow_rate);
 	} else {
