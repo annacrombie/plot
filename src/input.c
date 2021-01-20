@@ -124,7 +124,7 @@ pdtry_buffer(struct plot_data *pd, size_t max_w, uint32_t *shifted, size_t shift
 }
 
 int
-pdtry_all_buffers(struct plot *p, int shift)
+pdtry_all_buffers(struct plot *p)
 {
 	size_t i;
 	uint32_t read = 0,
@@ -132,27 +132,25 @@ pdtry_all_buffers(struct plot *p, int shift)
 		 maxshift = 0,
 		 min_len = p->width;
 
-	if (shift) {
-		for (i = 0; i < p->datasets; i++) {
-			if (p->data[i].len < min_len) {
-				min_len = p->data[i].len;
-			}
+	for (i = 0; i < p->datasets; i++) {
+		if (p->data[i].len < min_len) {
+			min_len = p->data[i].len;
 		}
 	}
 
 	for (i = 0; i < p->datasets; i++) {
-		if (!(p->flags & plot_flag_animate) && shift && p->data[i].len - min_len > MAX_AHEAD) {
+		if (!(p->flags & plot_flag_animate) && p->data[i].len - min_len > MAX_AHEAD) {
 			continue;
 		}
 
-		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], shift, p->average);
+		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 1, p->average);
 
 		if (shifts[i] > maxshift) {
 			maxshift = shifts[i];
 		}
 	}
 
-	if (shift && maxshift) {
+	if (maxshift) {
 		for (i = 0; i < p->datasets; i++) {
 			if ((shifts[i] = maxshift - shifts[i])) {
 				if ((p->data[i].len > shifts[i])) {
@@ -170,24 +168,15 @@ pdtry_all_buffers(struct plot *p, int shift)
 	return read;
 }
 
-int
-pdread_no_shift(struct plot *p)
-{
-	size_t i;
-	uint32_t read = 0,
-		 shifts[MAX_DATA] = { 0 };
-
-	for (i = 0; i < p->datasets; i++) {
-		read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 0, p->average);
-	}
-	return read;
-}
-
  void
  pdread_all_available(struct plot *p)
  {
-	uint32_t read = 0;
+	uint32_t read,
+		shifts[MAX_DATA] = { 0 };
+	size_t i;
 	do{
-		read = pdread_no_shift(p);
+		for (i = 0, read = 0; i < p->datasets; i++) {
+			read |= pdtry_buffer(&p->data[i], p->width, &shifts[i], 0, p->average);
+		}
 	}while(read);
 }

@@ -47,7 +47,7 @@ follow_plot(struct plot *p, long ms)
 	printf("\033[?25l");
 
 	while (loop) {
-		if (!pdtry_all_buffers(p, 1)) {
+		if (!pdtry_all_buffers(p)) {
 			eof = 1;
 			for (i = 0; i < p->datasets; i++) {
 				if (feof(p->data[i].src.src)) {
