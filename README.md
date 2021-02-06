@@ -31,6 +31,13 @@ $ ninja -C build
 $ ninja -C build install
 ```
 
+# Testing
+
+```
+$ meson test -C build
+$ meson test -C build -v --num-processes 1
+```
+
 # Usage
 
 ```
