@@ -14,7 +14,7 @@ static void
 print_usage(FILE *f)
 {
 	fprintf(f,
-		"plot v%s-%s\n"
+		"plot %s-%s\n"
 		"usage: plot [opts]\n"
 		"opts\n"
 		"  -i <filename>|- - specify a data source\n"
