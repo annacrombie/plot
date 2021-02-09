@@ -7,7 +7,7 @@ URL: https://github.com/annacrombie/plot
 Prefix: /usr
 Source0: %{expand:%%(pwd)}
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}%{dist}-XXXXXX)
-BuildRequires: gcc, meson, ninja-build, rpm-build
+BuildRequires: gcc, git, meson, ninja-build, rpm-build
 
 %description
 Generate a simple ascii plot.
