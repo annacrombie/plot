@@ -16,9 +16,8 @@ $
 
 Dependencies:
 
-+ meson
-+ ninja
-+ c compiler
++ meson >= 0.44.1
++ c99 compiler
 
 ```
 $ meson build
