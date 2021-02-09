@@ -35,6 +35,11 @@ $ ninja -C build install
 
 ```
 $ meson test -C build
+```
+
+or, if you want to watch the tests,
+
+```
 $ meson test -C build -v --num-processes 1
 ```
 
