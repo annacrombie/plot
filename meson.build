@@ -39,10 +39,9 @@ else
 	git_sha = 'unknown'
 endif
 
-version_info = {
-	'version': meson.project_version(),
-	'vcs_tag': git_sha,
-}
+version_info = configuration_data()
+version_info.set('version', meson.project_version())
+version_info.set('vcs_tag', git_sha)
 
 deps = [
 	cc.find_library('m', required : true),
