@@ -68,7 +68,7 @@ shift_arr(double *arr, size_t off, size_t amnt)
 void
 pd_avg(struct plot_data *pd, double *read_arr, double *arr, size_t *read_len, uint32_t avg_by)
 {
-	size_t i,len = 0;
+	size_t i, len = 0;
 	if (avg_by == 1) {
 		memcpy(arr, read_arr, sizeof(double) * (*read_len));
 	} else {
@@ -103,7 +103,7 @@ pdtry_buffer_noshift(struct plot_data *pd, size_t max_w, uint32_t avg_by)
 		memcpy(pd->data, arr, max_w * sizeof(double));
 		pd->len = max_w;
 		return 1;
-	} else if(len + pd->len > max_w) {
+	} else if (len + pd->len > max_w) {
 		len = max_w - pd->len;
 	}
 
@@ -189,12 +189,12 @@ pdtry_all_buffers(struct plot *p)
 	return read;
 }
 
- void
- pdread_all_available(struct plot *p)
- {
+void
+pdread_all_available(struct plot *p)
+{
 	uint32_t read;
 	size_t i;
-	do{
+	do {
 		for (i = 0, read = 0; i < p->datasets; i++) {
 			read |= pdtry_buffer_noshift(&p->data[i], p->width, p->average);
 		}
