@@ -7,7 +7,7 @@ build:
   image: alpine:edge
   script:
     # Install dependencies
-    - apk add g++ meson ninja python3 scdoc valgrind
+    - apk add g++ git meson ninja python3 scdoc valgrind
     # Prepare packages
     - rm -rf ./build
     - meson setup --buildtype=release -Dbuild_docs=enabled -Dtest=true ./build
