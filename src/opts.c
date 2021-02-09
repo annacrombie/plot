@@ -8,12 +8,13 @@
 #include "display.h"
 #include "plot.h"
 #include "util.h"
+#include "version.h"
 
 static void
 print_usage(FILE *f)
 {
 	fprintf(f,
-		"plot " PLOT_VERSION "\n"
+		"plot v%s-%s\n"
 		"usage: plot [opts]\n"
 		"opts\n"
 		"  -i <filename>|- - specify a data source\n"
@@ -43,7 +44,9 @@ print_usage(FILE *f)
 		"use capital character for bright variant\n"
 		"\n"
 		"ex.\n"
-		"seq 1 99 | shuf | plot -c g\n"
+		"seq 1 99 | shuf | plot -c g\n",
+		version.version,
+		version.vcs_tag
 		);
 }
 

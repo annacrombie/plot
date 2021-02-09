@@ -1,8 +1,6 @@
 #ifndef _PLOT_H_
 #define _PLOT_H_
 
-#define PLOT_VERSION "0.4.0"
-
 #include <stdint.h>
 #include <stdio.h>
 

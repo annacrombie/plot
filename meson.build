@@ -31,9 +31,23 @@ add_project_arguments(cc.get_supported_arguments([
 	'-Wno-unused-parameter',
 ]), language: 'c')
 
+git = find_program('git', required: false)
+if git.found()
+	git_rev_parse = run_command(git, 'rev-parse', '--short', '@')
+	git_sha = git_rev_parse.stdout().strip()
+else
+	git_sha = 'unknown'
+endif
+
+version_info = {
+	'version': meson.project_version(),
+	'vcs_tag': git_sha,
+}
+
 deps = [
 	cc.find_library('m', required : true),
 ]
+include = [include_directories(['src'])]
 
 src = files([
 	'src/display.c',
@@ -43,9 +57,19 @@ src = files([
 	'src/opts.c',
 	'src/plot.c',
 	'src/util.c',
-])
+]) + [configure_file(
+	configuration: version_info,
+	input: files('src/version.c.in'),
+	output: 'version.c'
+)]
 
-plot = executable('plot', sources: src, dependencies: deps, install: true)
+plot = executable(
+	'plot',
+	sources: src,
+	dependencies: deps,
+	include_directories: include,
+	install: true
+)
 
 if get_option('test')
 	subdir('tests')
