@@ -31,24 +31,15 @@ plot_init(struct plot *plot)
 	plot->datasets = 0;
 }
 
-static void
-plot_data_init(struct plot_data *pd, FILE *src, int color)
-{
-	pd->src.src = src;
-	pd->src.rem = 0;
-	pd->src.size = 0;
-	pd->len = 0;
-	pd->color = color;
-}
-
 void
-plot_add(struct plot *plot, FILE *f, int color)
+plot_add(struct plot *plot, int color)
 {
 	if (color != 0) {
 		plot->flags |= plot_flag_color;
 	}
 
-	plot_data_init(&plot->data[plot->datasets], f, color);
+	plot->data[plot->datasets].len = 0;
+	plot->data[plot->datasets].color = color;
 	plot->datasets++;
 }
 
@@ -121,16 +112,4 @@ plot_plot(struct plot *plot)
 	plot_display(plot);
 
 	return 1;
-}
-
-void
-plot_destroy(struct plot *plot)
-{
-	size_t i;
-
-	for (i = 0; i < plot->datasets; i++) {
-		if (plot->data[i].src.src != NULL) {
-			fclose(plot->data[i].src.src);
-		}
-	}
 }

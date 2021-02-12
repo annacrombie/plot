@@ -49,6 +49,8 @@ deps = [
 include = [include_directories(['src'])]
 
 src = files([
+	'src/data_pipe.c',
+	'src/data_proc.c',
 	'src/display.c',
 	'src/follow.c',
 	'src/input.c',
