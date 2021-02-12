@@ -3,7 +3,6 @@
 
 #include "plot.h"
 
-int is_digit(char c);
 enum color char_to_color(char c);
 unsigned int color_to_ansi_escape_color(enum color);
 unsigned int utf8_bytes(const char *utf8);
