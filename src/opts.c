@@ -296,7 +296,12 @@ parse_opts(struct plot *p, int argc, char **argv)
 				fprintf(stderr, "invalid average arg\n");
 				exit(EXIT_FAILURE);
 			}
-			p->average = tmp;
+
+			uint32_t tmpu = tmp;
+
+			if (!pipeline_append(data_proc_avg, &tmpu, sizeof(uint32_t))) {
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'A':
 			p->flags |= plot_flag_animate;
