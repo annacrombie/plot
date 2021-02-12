@@ -2,6 +2,7 @@
 
 #include "follow.h"
 #include "input.h"
+#include "log.h"
 #include "opts.h"
 #include "plot.h"
 
@@ -10,6 +11,8 @@ main(int argc, char **argv)
 {
 	struct plot p = { 0 };
 	plot_init(&p);
+
+	logfile = stderr;
 
 	int lc = parse_opts(&p, argc, argv);
 

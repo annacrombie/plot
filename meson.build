@@ -52,6 +52,7 @@ src = files([
 	'src/display.c',
 	'src/follow.c',
 	'src/input.c',
+	'src/log.c',
 	'src/main.c',
 	'src/opts.c',
 	'src/plot.c',
