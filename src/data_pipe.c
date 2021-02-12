@@ -75,7 +75,7 @@ pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size)
 static void
 flush_buf(double *dat, uint32_t *i, uint32_t *len)
 {
-	/* L("flushing %d/%d nums", dbuf->i, dbuf->len); */
+	/* L("flushing %d/%d nums", *i, *len); */
 	memmove(dat, &dat[*i], (*len - *i) * sizeof(double));
 	*len -= *i;
 	*i = 0;
@@ -90,7 +90,7 @@ flush_dbuf(struct dbuf *dbuf)
 static bool
 pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, struct pipeline *pl)
 {
-	uint32_t i, r;
+	uint32_t i, r, flush;
 
 	struct dbuf *in = &pl->in.out;
 
@@ -117,7 +117,12 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, struct pipeline 
 
 	r = in->len - in->i;
 	if (*out_len + r >= out_cap) {
-		uint32_t flush = (*out_len + r) - out_cap;
+		if (r >= out_cap) {
+			flush = *out_len;
+		} else {
+			flush = (*out_len + r) - out_cap;
+		}
+
 		flush_buf(out, &flush, out_len);
 		/* r = out_cap - *out_len; */
 	}
