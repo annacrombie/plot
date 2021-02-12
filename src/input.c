@@ -1,10 +1,15 @@
 #include "posix.h"
 
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "data_proc.h"
 #include "input.h"
+#include "log.h"
 #include "plot.h"
 #include "util.h"
 
@@ -23,41 +28,69 @@ start_of_number(char c)
 	}
 }
 
-static int
-read_numbers(struct input *in, double *dest, size_t max)
+bool
+input_read(struct input *in)
 {
 	char *endptr = NULL;
-	size_t i, read;
-	size_t len = 0, lr = 0;
+	size_t i = 0, buflen, consumed = 0;
+	double tmp;
+	struct dbuf *out = &in->out;
 
-	if (in->rem >= buf_size) {
-		buf_size += in->rem;
+	if (feof(in->src)) {
+		return false;
 	}
 
-	read = fread(&in->buf[in->rem], sizeof(char), buf_size - in->rem, in->src);
-	read += in->rem;
+	if (in->rem >= MAX_INBUF) {
+		// grow the buffer if the number of digits remaining is bigger
+		// than the buffer This should only happen with really tiny
+		// values of buf_size, so maybe when the animation related
+		// functions are updated, this can be removed
+		/* buf_size += in->rem; */
+		assert(false);
+	}
 
-	for (i = 0; i < read; i++) {
-		if (!is_digit(in->buf[i]) || (endptr != NULL && &in->buf[i] < endptr)) {
+	if (!(buflen = fread(&in->buf[in->rem], 1, MAX_INBUF - in->rem, in->src))) {
+		fprintf(stderr, "error reading from file: %s", strerror(errno));
+		return false;
+	}
+
+	buflen += in->rem;
+
+	while (i < buflen) {
+		if (!start_of_number(in->buf[i])) {
+			++i;
 			continue;
 		}
 
-		lr = i;
-		dest[len] = strtod(&in->buf[i], &endptr);
-		len++;
+		errno = 0;
+		tmp = strtod(&in->buf[i], &endptr);
+		if (endptr == &in->buf[i] || errno) {
+			++i;
+			continue;
+		}
 
-		if (len == max) {
+		consumed = i;
+
+		/* L("i :%d, pos: %ld, %f", out->len, i, tmp); */
+
+		out->dat[out->len] = tmp;
+		if (++out->len >= DATA_LEN) {
 			break;
 		}
+
+		i += endptr - &in->buf[i];
 	}
 
-	if (!feof(in->src) && endptr >= &in->buf[i - 1]) {
-		in->rem = read - lr;
-		memmove(in->buf, &in->buf[lr], sizeof(char) * in->rem);
-		len--;
-	} else {
-		in->rem = 0;
+	if (i == buflen && !feof(in->src)) {
+		// The last number we read ended right at the end of the
+		// buffer, but there is still more to read.  unread this number
+		// for now in case only a portion of it is in the buffer
+		--out->len;
 	}
 
-	return len;
+	in->rem = buflen - consumed;
+	memmove(in->buf, &in->buf[consumed], in->rem);
+	memset(&in->buf[in->rem], 0, MAX_INBUF - in->rem);
+
+	return true;
 }
