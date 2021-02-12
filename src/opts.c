@@ -5,7 +5,10 @@
 #include <string.h>
 #include <strings.h>
 
+#include "data_pipe.h"
+#include "data_proc.h"
 #include "display.h"
+#include "log.h"
 #include "plot.h"
 #include "util.h"
 #include "version.h"
@@ -172,17 +175,89 @@ set_fixed_plot_bounds(char *s, struct plot *p)
 	}
 }
 
-static void
-add_data_from_file(char *filename, struct plot *p, int color)
-{
-	FILE *f = (strcmp(filename, "-") == 0) ? stdin : fopen(optarg, "r");
+#define PIPE_SEP "|"
+#define ARG_SEP ':'
 
-	if (f == NULL) {
-		fprintf(stderr, "no such file: %s\n", filename);
+// Make sure no names are prefixes of other names
+static struct {
+	const char *name;
+	bool takes_arg;
+} dproc_info[data_proc_type_count] = {
+	[data_proc_avg] = { "avg", true },
+	[data_proc_sma] = { "sma", true },
+};
+
+static void
+add_data_from_file(char *path, struct plot *p, int color)
+{
+	uint32_t i, namelen, toklen, ctx_size;
+	char *tok = strtok(path, PIPE_SEP), *endptr;
+	int32_t tmp;
+	const char *err;
+	void *ctx;
+
+	if (!tok) {
+		err = "missing filename";
+		goto err;
+	} else if (!pipeline_create(tok)) {
 		exit(EXIT_FAILURE);
 	}
 
-	plot_add(p, f, color);
+	while ((tok = strtok(NULL, PIPE_SEP))) {
+		toklen = strlen(tok);
+
+		ctx = NULL;
+		ctx_size = 0;
+
+		for (i = 0; i < data_proc_type_count; ++i) {
+			namelen = strlen(dproc_info[i].name);
+
+			if (namelen <= toklen
+			    && strncmp(tok, dproc_info[i].name, namelen) == 0) {
+				break;
+			}
+		}
+
+		if (i == data_proc_type_count) {
+			err = "unknown proc";
+			goto err;
+		}
+
+		if (namelen < toklen) {
+			if (tok[namelen] != ARG_SEP) {
+				err = "bad argument seperator";
+				goto err;
+			} else if (!tok[namelen + 1]) {
+				err = "missing argument";
+				goto err;
+			} else if (!dproc_info[i].name) {
+				err = "proc takes no argument";
+				goto err;
+			}
+
+			tmp = strtol(&tok[namelen + 1], &endptr, 10);
+			if (*endptr) {
+				err = "invalid argument";
+				goto err;
+			}
+
+			ctx = &tmp;
+			ctx_size = sizeof(int32_t);
+		} else if (dproc_info[i].name) {
+			err = "missing argument";
+			goto err;
+		}
+
+		if (!pipeline_append(i, ctx, ctx_size)) {
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	plot_add(p, color);
+	return;
+err:
+	fprintf(stderr, "error parsing '%s': %s\n", tok, err);
+	exit(EXIT_FAILURE);
 }
 
 static enum plot_charset
