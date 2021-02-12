@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define INBUF 512
 #define CHARBUF 31
 #define MAX_DATA 32
 #define MAX_WIDTH 512
@@ -100,21 +99,13 @@ struct x_label {
 	enum side side;
 };
 
-struct input {
-	char buf[INBUF];
-	FILE *src;
-	size_t rem, size;
-};
-
 struct plot_bounds {
 	double max, min;
 };
 
 struct plot_data {
 	double data[MAX_WIDTH];
-	struct input src;
-	struct { double sum; uint32_t count; } avg;
-	size_t len;
+	uint32_t len;
 	enum color color;
 };
 
@@ -142,7 +133,6 @@ struct plot {
 };
 
 void plot_init(struct plot *plot);
-void plot_add(struct plot *plot, FILE *f, int color);
+void plot_add(struct plot *plot, int color);
 int plot_plot(struct plot *plot);
-void plot_destroy(struct plot *plot);
 #endif

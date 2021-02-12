@@ -29,8 +29,8 @@ install_signal_handler(void)
 void
 follow_plot(struct plot *p, long ms)
 {
-	int eof;
-	size_t i;
+	/* int eof; */
+	/* size_t i; */
 	int height = p->height;
 
 	if (p->x_label.every && p->x_label.side) {
@@ -47,20 +47,20 @@ follow_plot(struct plot *p, long ms)
 	printf("\033[?25l");
 
 	while (loop) {
-		if (!pdtry_all_buffers(p)) {
-			eof = 1;
-			for (i = 0; i < p->datasets; i++) {
-				if (feof(p->data[i].src.src)) {
-					clearerr(p->data[i].src.src);
-				} else {
-					eof = 0;
-				}
-			}
+		/* if (!pdtry_all_buffers(p)) { */
+		/* 	eof = 1; */
+		/* 	for (i = 0; i < p->datasets; i++) { */
+		/* 		if (feof(p->data[i].src.src)) { */
+		/* 			clearerr(p->data[i].src.src); */
+		/* 		} else { */
+		/* 			eof = 0; */
+		/* 		} */
+		/* 	} */
 
-			if ((p->flags & plot_flag_animate) && eof) {
-				loop = 0;
-			}
-		}
+		/* 	if ((p->flags & plot_flag_animate) && eof) { */
+		/* 		loop = 0; */
+		/* 	} */
+		/* } */
 
 		if (plot_plot(p)) {
 			printf("\033[%dA", height);
