@@ -10,6 +10,19 @@
 
 #define MAX_AHEAD 8
 
+static bool
+start_of_number(char c)
+{
+	switch (c) {
+	case '0': case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7': case '8': case '9':
+	case '-': case '+':
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int
 read_numbers(struct input *in, double *dest, size_t max)
 {
