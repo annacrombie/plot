@@ -128,7 +128,6 @@ struct plot {
 	uint32_t height, width;
 	uint32_t datasets;
 	uint32_t follow_rate;
-	uint32_t average;
 	uint32_t flags;
 };
 

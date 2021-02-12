@@ -241,12 +241,17 @@ plot_print_x_label(struct plot *p, char *buf)
 		return;
 	}
 
-	every = p->x_label.every / p->average;
+	/* TODO is it possible to do this in the new system?  If not, remove
+	 * these redundant checks
+	 */
+	/* every = p->x_label.every / p->average; */
+	every = p->x_label.every;
 	if (!every) {
 		every = 1;
 	}
 
-	start = p->x_label.start / p->average;
+	/* start = p->x_label.start / p->average; */
+	start = p->x_label.start;
 
 	snprintf(fmt[0], 31, "%%-%dld", every);
 
@@ -274,7 +279,7 @@ plot_print_x_label(struct plot *p, char *buf)
 	for (i = start + tmp; i < end; i += every) {
 		tmp = i < 0 ? -1 : 1;
 		tmp = p->x_label.mod > 0 ? tmp * (i % p->x_label.mod) : i;
-		tmp *= p->average;
+		/* tmp *= p->average; */
 
 		if (tmp == 0 && p->x_label.color) {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
