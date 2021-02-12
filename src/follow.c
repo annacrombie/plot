@@ -29,6 +29,7 @@ install_signal_handler(void)
 void
 follow_plot(struct plot *p, long ms)
 {
+	return;
 	/* int eof; */
 	/* size_t i; */
 	int height = p->height;
