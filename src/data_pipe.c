@@ -101,26 +101,33 @@ flush_dbuf(struct dbuf *dbuf)
 }
 
 static bool
-pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, struct pipeline *pl)
+pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new,
+	struct pipeline *pl)
 {
-	uint32_t i, r, flush;
+	uint32_t i, new, flush;
+	struct dbuf *in;
 
-	struct dbuf *in = &pl->in.out;
+	in = pl->len ? &pl->pipe[pl->len - 1].buf : &pl->in.out;
+	if (max_new == 0 || in->len - in->i < max_new) {
+		in = &pl->in.out;
 
-	if (!input_read(&pl->in)) {
-		/* L("no input"); */
-		return false;
+		if (!input_read(&pl->in)) {
+			/* L("no input"); */
+			return false;
+		}
+
+		for (i = 0; i < pl->len; ++i) {
+			/* L("data[%d] <<< %d:%d", i, in->i, in->len); */
+			/* for (uint32_t j = in->i; j < in->len; ++j) { */
+			/* 	fprintf(stderr, "%f, ", in->dat[j]); */
+			/* } */
+			/* fprintf(stderr, "\n"); */
+
+			pl->pipe[i].proc(&pl->pipe[i].buf, in, pl->pipe[i].ctx);
+			in = &pl->pipe[i].buf;
+		}
 	}
 
-	for (i = 0; i < pl->len; ++i) {
-		/* L("data[%d] <<< %d:%d", i, in->i, in->len); */
-		/* for (uint32_t j = in->i; j < in->len; ++j) { */
-		/* 	fprintf(stderr, "%f, ", in->dat[j]); */
-		/* } */
-		/* fprintf(stderr, "\n"); */
-		pl->pipe[i].proc(&pl->pipe[i].buf, in, pl->pipe[i].ctx);
-		in = &pl->pipe[i].buf;
-	}
 
 	/* L("out <<< %d:%d", in->i, in->len); */
 	/* for (uint32_t j = in->i; j < in->len; ++j) { */
@@ -128,22 +135,25 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, struct pipeline 
 	/* } */
 	/* fprintf(stderr, "\n"); */
 
-	r = in->len - in->i;
-	if (*out_len + r >= out_cap) {
-		if (r >= out_cap) {
+	new = in->len - in->i;
+	if (max_new && new > max_new) {
+		new = max_new;
+	}
+
+	if (*out_len + new >= out_cap) {
+		if (new >= out_cap) {
 			flush = *out_len;
 		} else {
-			flush = (*out_len + r) - out_cap;
+			flush = (*out_len + new) - out_cap;
 		}
 
 		flush_buf(out, &flush, out_len);
-		/* r = out_cap - *out_len; */
 	}
 
-	if (r) {
-		memcpy(&out[*out_len], in->dat, r * sizeof(double));
-		*out_len += r;
-		in->i += r;
+	if (new) {
+		memcpy(&out[*out_len], in->dat, new * sizeof(double));
+		*out_len += new;
+		in->i += new;
 	}
 
 	flush_dbuf(&pl->in.out);
