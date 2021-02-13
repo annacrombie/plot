@@ -50,8 +50,12 @@ input_read(struct input *in)
 	}
 
 	if (!(buflen = fread(&in->buf[in->rem], 1, MAX_INBUF - in->rem, in->src))) {
-		fprintf(stderr, "error reading from file: %s", strerror(errno));
-		return false;
+		if (errno == EAGAIN || !errno) {
+			return true;
+		} else {
+			fprintf(stderr, "error reading from file %d: %s\n", errno, strerror(errno));
+			return false;
+		}
 	}
 
 	buflen += in->rem;
