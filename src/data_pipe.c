@@ -27,6 +27,7 @@ struct pipeline {
 	uint8_t len;
 };
 
+struct pipeline default_pipeline = { 0 };
 static struct pipeline pipelines[MAX_DATA] = { 0 };
 static uint32_t pipelines_len = 0;
 
@@ -38,6 +39,8 @@ pipeline_create(char *path)
 	if (pipelines_len >= MAX_DATA) {
 		return false;
 	}
+
+	memcpy(&pipelines[pipelines_len], &default_pipeline, sizeof(struct pipeline));
 
 	struct input *in = &pipelines[pipelines_len].in;
 
@@ -65,23 +68,29 @@ pipeline_create(char *path)
 bool
 pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size)
 {
-	assert(pipelines_len);
 	assert(size < PIPELINE_CTX);
 	assert(proc < data_proc_type_count);
 
-	if (pipelines[pipelines_len - 1].len >= PIPELINE_LEN) {
+	struct pipeline *pl;
+
+	if (pipelines_len) {
+		pl = &pipelines[pipelines_len - 1];
+	} else {
+		pl = &default_pipeline;
+	}
+
+	if (pl->len >= PIPELINE_LEN) {
 		return false;
 	} else if (!dproc_registry[proc].ctx_validate(ctx, size)) {
 		return false;
 	}
 
-	struct pipeline_elem *pe = &pipelines[pipelines_len - 1]
-				   .pipe[pipelines[pipelines_len - 1].len];
+	struct pipeline_elem *pe = &pl->pipe[pl->len];
 
 	memcpy(pe->ctx, ctx, size);
 	pe->proc = dproc_registry[proc].dproc;
 
-	++pipelines[pipelines_len - 1].len;
+	++pl->len;
 	return true;
 }
 
