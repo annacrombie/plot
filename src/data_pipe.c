@@ -164,16 +164,35 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 	return true;
 }
 
-void
-pipeline_exec_all(struct plot *p)
+bool
+pipeline_exec_all(struct plot *p, uint32_t max_new)
 {
 	uint32_t i;
 	bool read;
-	do {
-		read = false;
-		for (i = 0; i < pipelines_len; ++i) {
-			read |= pipeline_exec(p->data[i].data, &p->data[i].len,
-				p->width, &pipelines[i]);
+	read = false;
+
+	for (i = 0; i < pipelines_len; ++i) {
+		read |= pipeline_exec(p->data[i].data, &p->data[i].len,
+			p->width, max_new, &pipelines[i]);
+	}
+
+	return read;
+}
+
+void
+pipeline_fast_fwd(struct plot *p)
+{
+	while (pipeline_exec_all(p, 0)) {
+	}
+}
+
+void
+pipeline_reset_eofs(void)
+{
+	uint32_t i;
+	for (i = 0; i < pipelines_len; ++i) {
+		if (feof(pipelines[i].in.src)) {
+			clearerr(pipelines[i].in.src);
 		}
-	} while (read);
+	}
 }

@@ -8,5 +8,7 @@
 
 bool pipeline_create(char *path);
 bool pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size);
-void pipeline_exec_all(struct plot *p);
+bool pipeline_exec_all(struct plot *p, uint32_t max_new);
+void pipeline_reset_eofs(void);
+void pipeline_fast_fwd(struct plot *p);
 #endif
