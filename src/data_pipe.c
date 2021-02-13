@@ -2,7 +2,9 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "data_pipe.h"
 #include "data_proc.h"
@@ -31,6 +33,8 @@ static uint32_t pipelines_len = 0;
 bool
 pipeline_create(char *path)
 {
+	int fd;
+
 	if (pipelines_len >= MAX_DATA) {
 		return false;
 	}
@@ -44,6 +48,15 @@ pipeline_create(char *path)
 			strerror(errno));
 		return false;
 	}
+
+	if ((fd = fileno(in->src) == -1)) {
+		fprintf(stderr, "couldn't get file descriptor for '%s': %s\n",
+			path, strerror(errno));
+		return false;
+	}
+
+	int flgs = fcntl(fd, F_GETFL);
+	flgs = fcntl(fd, F_SETFL, flgs | O_NONBLOCK);
 
 	++pipelines_len;
 	return true;
