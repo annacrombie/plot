@@ -7,6 +7,20 @@
 #include "opts.h"
 #include "plot.h"
 
+bool
+animate_cb(struct plot *p)
+{
+	return pipeline_exec_all(p, 1);
+}
+
+bool
+follow_cb(struct plot *p)
+{
+	pipeline_reset_eofs();
+	pipeline_fast_fwd(p);
+	return true;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -24,13 +38,12 @@ main(int argc, char **argv)
 		plot_add(&p, lc);
 	}
 
-	if (p.flags & (plot_flag_animate | plot_flag_follow)) {
-		/* set_input_buffer_size(8); */
-		// TODO
-		follow_plot(&p, p.follow_rate);
+	if (p.flags & plot_flag_animate) {
+		animate_plot(&p, p.follow_rate, animate_cb);
+	} else if (p.flags & plot_flag_follow) {
+		animate_plot(&p, p.follow_rate, follow_cb);
 	} else {
-		/* pdread_all_available(&p); */
-		pipeline_exec_all(&p);
+		pipeline_fast_fwd(&p);
 		plot_plot(&p);
 	}
 
