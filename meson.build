@@ -49,10 +49,10 @@ deps = [
 include = [include_directories(['src'])]
 
 src = files([
+	'src/animate.c',
 	'src/data_pipe.c',
 	'src/data_proc.c',
 	'src/display.c',
-	'src/follow.c',
 	'src/input.c',
 	'src/log.c',
 	'src/main.c',

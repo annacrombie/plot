@@ -1,7 +1,7 @@
 #include "posix.h"
 
+#include "animate.h"
 #include "data_pipe.h"
-#include "follow.h"
 #include "input.h"
 #include "log.h"
 #include "opts.h"
