@@ -6,7 +6,7 @@
 #include "data_proc.h"
 #include "plot.h"
 
-bool pipeline_create(char *path);
+bool pipeline_create(const char *path);
 bool pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size);
 bool pipeline_exec_all(struct plot *p, uint32_t max_new);
 void pipeline_reset_eofs(void);

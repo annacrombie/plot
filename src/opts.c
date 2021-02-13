@@ -26,6 +26,7 @@ print_usage(FILE *f)
 		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
 		"  -y [width]:[prec]:[side] - set y label format\n"
 		"  -c <color> - set color of next data source\n"
+		"  -p <pipeline> - specify a data processing pipeline\n"
 		"  -f - \"follow\" input\n"
 		"  -A - \"animate\" input by following and exit\n"
 		"  -S <milliseconds> - follow rate\n"
@@ -187,7 +188,7 @@ static struct {
 };
 
 static void
-add_data_from_file(char *path, struct plot *p, int color)
+parse_pipeline(char *path, struct plot *p)
 {
 	uint32_t i, namelen, toklen, ctx_size;
 	char *tok = strtok(path, PIPE_SEP), *endptr;
@@ -195,14 +196,7 @@ add_data_from_file(char *path, struct plot *p, int color)
 	const char *err;
 	void *ctx;
 
-	if (!tok) {
-		err = "missing filename";
-		goto err;
-	} else if (!pipeline_create(tok)) {
-		exit(EXIT_FAILURE);
-	}
-
-	while ((tok = strtok(NULL, PIPE_SEP))) {
+	do {
 		toklen = strlen(tok);
 
 		ctx = NULL;
@@ -250,13 +244,22 @@ add_data_from_file(char *path, struct plot *p, int color)
 		if (!pipeline_append(i, ctx, ctx_size)) {
 			exit(EXIT_FAILURE);
 		}
-	}
+	} while ((tok = strtok(NULL, PIPE_SEP)));
 
-	plot_add(p, color);
 	return;
 err:
 	fprintf(stderr, "error parsing '%s': %s\n", tok, err);
 	exit(EXIT_FAILURE);
+}
+
+static void
+add_input(const char *path, struct plot *p, enum color c)
+{
+	if (!pipeline_create(path)) {
+		exit(EXIT_FAILURE);
+	}
+
+	plot_add(p, c);
 }
 
 static enum plot_charset
@@ -288,7 +291,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 	int lc = 0;
 	long tmp;
 
-	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:ms:S:x:y:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:mp:s:S:x:y:")) != -1) {
 		switch (opt) {
 		case 'a':
 			if ((tmp = strtol(optarg, NULL, 10)) < 0) {
@@ -318,11 +321,14 @@ parse_opts(struct plot *p, int argc, char **argv)
 			p->flags |= plot_flag_follow;
 			break;
 		case 'i':
-			add_data_from_file(optarg, p, lc);
+			add_input(optarg, p, lc);
 			lc = 0;
 			break;
 		case 'm':
 			p->flags |= plot_flag_merge_plot_pieces;
+			break;
+		case 'p':
+			parse_pipeline(optarg, p);
 			break;
 		case 's':
 			p->charset = set_charset(optarg);

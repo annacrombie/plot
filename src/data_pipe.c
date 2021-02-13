@@ -32,7 +32,7 @@ static struct pipeline pipelines[MAX_DATA] = { 0 };
 static uint32_t pipelines_len = 0;
 
 bool
-pipeline_create(char *path)
+pipeline_create(const char *path)
 {
 	int fd;
 
