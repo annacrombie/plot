@@ -21,7 +21,6 @@ print_usage(FILE *f)
 		"usage: plot [opts]\n"
 		"opts\n"
 		"  -i <filename>|- - specify a data source\n"
-		"  -a <n> - average n inputs per data point\n"
 		"  -b [min]:[max] - set fixed plot bounds\n"
 		"  -d [height]:[width] - set plot dimensions\n"
 		"  -x [every]:[offset]:[mod]:[side]:[color] - set x label format\n"
@@ -298,6 +297,9 @@ parse_opts(struct plot *p, int argc, char **argv)
 			}
 
 			uint32_t tmpu = tmp;
+
+			fprintf(stderr, "warning: -a %d is deprecated, "
+				"please use `-p avg:%d` instead\n", tmpu, tmpu);
 
 			if (!pipeline_append(data_proc_avg, &tmpu, sizeof(uint32_t))) {
 				exit(EXIT_FAILURE);
