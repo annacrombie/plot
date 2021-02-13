@@ -1,6 +1,7 @@
 #include "posix.h"
 
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -26,6 +27,29 @@ install_signal_handler(void)
 	sigaction(SIGINT, &sigact, NULL);
 }
 
+enum esc_seq {
+	esc_curs_hide,
+	esc_curs_show,
+	esc_curs_up,
+	esc_curs_down,
+};
+
+static const char *esc_seq[] = {
+	[esc_curs_hide] = "\033[?25l",
+	[esc_curs_show] = "\033[?12l\033[?25h",
+	[esc_curs_up]   = "\033[%dA",
+	[esc_curs_down] = "\033[%dB",
+};
+
+void
+do_esc(enum esc_seq es, ...)
+{
+	va_list ap;
+	va_start(ap, es);
+	vprintf(esc_seq[es], ap);
+	va_end(ap);
+}
+
 void
 animate_plot(struct plot *p, long ms, fetch_new_data fetch)
 {
@@ -42,7 +66,7 @@ animate_plot(struct plot *p, long ms, fetch_new_data fetch)
 
 	install_signal_handler();
 
-	printf("\033[?25l");
+	do_esc(esc_curs_hide);
 
 	while (loop) {
 		if (!fetch(p)) {
@@ -50,12 +74,13 @@ animate_plot(struct plot *p, long ms, fetch_new_data fetch)
 		}
 
 		if (plot_plot(p)) {
-			printf("\033[%dA", height);
+			do_esc(esc_curs_up, height);
 			fflush(stdout);
 		}
 
 		nanosleep(&sleep, NULL);
 	}
 
-	printf("\033[%dB\033[?12l\033[?25h", height);
+	do_esc(esc_curs_down, height);
+	do_esc(esc_curs_show);
 }
