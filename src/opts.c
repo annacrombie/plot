@@ -191,6 +191,8 @@ static struct {
 } dproc_info[data_proc_type_count] = {
 	[data_proc_avg] = { "avg", arg_type_int },
 	[data_proc_sma] = { "sma", arg_type_int },
+	[data_proc_cma] = { "cma", },
+	[data_proc_roc] = { "roc", arg_type_float },
 };
 
 static void

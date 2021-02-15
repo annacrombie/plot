@@ -98,7 +98,60 @@ sma_validator(void *ctx, uint32_t size)
 	}
 }
 
+static void
+proc_cma(struct dbuf *out, struct dbuf *in, void *_ctx)
+{
+	struct {
+		double cma;
+		double n;
+	} *ctx = _ctx;
+
+	for (; in->i < in->len; ++in->i) {
+		ctx->cma =
+			out->dat[out->len] =  (in->dat[in->i] + ctx->n * ctx->cma)
+					     / (ctx->n + 1);
+
+		ctx->n += 1.0;
+
+		if (++out->len > DATA_LEN) {
+			break;
+		}
+	}
+}
+
+static void
+proc_roc(struct dbuf *out, struct dbuf *in, void *_ctx)
+{
+	struct {
+		float t;
+		double old;
+		bool init;
+	} *ctx = _ctx;
+
+	if (!ctx->init && in->i < in->len) {
+		ctx->old = in->dat[in->i];
+		ctx->init = true;
+	}
+
+	for (; in->i < in->len; ++in->i) {
+		out->dat[out->len] = (in->dat[in->i] - ctx->old) / ctx->t;
+		ctx->old = in->dat[in->i];
+
+		if (++out->len > DATA_LEN) {
+			break;
+		}
+	}
+}
+
+static bool
+roc_validator(void *ctx, uint32_t size)
+{
+	return true;
+}
+
 const struct dproc_registry_elem dproc_registry[data_proc_type_count] = {
 	[data_proc_avg] = { proc_avg, avg_validator },
 	[data_proc_sma] = { proc_sma, sma_validator },
+	[data_proc_cma] = { proc_cma, NULL },
+	[data_proc_roc] = { proc_roc, roc_validator },
 };
