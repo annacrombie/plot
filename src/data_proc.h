@@ -14,6 +14,8 @@ typedef bool ((*dproc_ctx_validate))(void *ctx, uint32_t size);
 enum data_proc_type {
 	data_proc_avg,
 	data_proc_sma,
+	data_proc_cma,
+	data_proc_roc,
 	data_proc_type_count,
 };
 
