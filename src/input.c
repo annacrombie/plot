@@ -32,7 +32,7 @@ bool
 input_read(struct input *in)
 {
 	char *endptr = NULL;
-	size_t i = 0, buflen, consumed = 0;
+	size_t i = 0, buflen, oldi = 0;
 	double tmp;
 	struct dbuf *out = &in->out;
 
@@ -73,7 +73,7 @@ input_read(struct input *in)
 			continue;
 		}
 
-		consumed = i;
+		oldi = i;
 
 		/* L("i :%d, pos: %ld, %f", out->len, i, tmp); */
 
@@ -90,10 +90,13 @@ input_read(struct input *in)
 		// buffer, but there is still more to read.  unread this number
 		// for now in case only a portion of it is in the buffer
 		--out->len;
+		i = oldi;
 	}
 
-	in->rem = buflen - consumed;
-	memmove(in->buf, &in->buf[consumed], in->rem);
+	if ((in->rem = buflen - i)) {
+		memmove(in->buf, &in->buf[i], in->rem);
+	}
+
 	memset(&in->buf[in->rem], 0, MAX_INBUF - in->rem);
 
 	return true;
