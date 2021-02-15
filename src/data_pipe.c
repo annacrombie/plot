@@ -24,7 +24,7 @@ struct pipeline_elem {
 struct pipeline {
 	struct input in;
 	struct pipeline_elem pipe[PIPELINE_LEN];
-	uint8_t len;
+	uint8_t len, flags;
 	uint32_t total_len;
 };
 
@@ -33,7 +33,7 @@ static struct pipeline pipelines[MAX_DATA] = { 0 };
 static uint32_t pipelines_len = 0;
 
 bool
-pipeline_create(const char *path)
+pipeline_create(const char *path, uint8_t pipeline_flags)
 {
 	int fd;
 
@@ -42,6 +42,8 @@ pipeline_create(const char *path)
 	}
 
 	memcpy(&pipelines[pipelines_len], &default_pipeline, sizeof(struct pipeline));
+
+	pipelines[pipelines_len].flags = pipeline_flags;
 
 	struct input *in = &pipelines[pipelines_len].in;
 
@@ -226,6 +228,10 @@ pipeline_reset_eofs(void)
 	for (i = 0; i < pipelines_len; ++i) {
 		if (feof(pipelines[i].in.src)) {
 			clearerr(pipelines[i].in.src);
+
+			if (pipelines[i].flags & pipeline_flag_rewind) {
+				rewind(pipelines[i].in.src);
+			}
 		}
 	}
 }

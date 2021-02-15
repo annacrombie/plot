@@ -277,9 +277,26 @@ err:
 }
 
 static void
-add_input(const char *path, struct plot *p, enum color c)
+add_input(char *path, struct plot *p, enum color c)
 {
-	if (!pipeline_create(path)) {
+	char *s;
+	uint8_t pipeline_flags = 0;
+
+	if ((s = strchr(path, ':'))) {
+		*s = 0;
+		for (s = s + 1; s && *s; ++s) {
+			switch (*s) {
+			case 'r':
+				pipeline_flags |= pipeline_flag_rewind;
+				break;
+			default:
+				fprintf(stderr, "invalid pipeline flag: '%c'\n", *s);
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	if (!pipeline_create(path, pipeline_flags)) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -379,7 +396,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 	}
 
 	if (p->datasets == 0) {
-		if (!pipeline_create("-")) {
+		if (!pipeline_create("-", 0)) {
 			exit(EXIT_FAILURE);
 		}
 
