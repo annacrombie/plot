@@ -308,7 +308,7 @@ set_charset(char *charset)
 	}
 }
 
-int
+void
 parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
@@ -378,6 +378,13 @@ parse_opts(struct plot *p, int argc, char **argv)
 		}
 	}
 
-	return lc;
+	if (p->datasets == 0) {
+		if (!pipeline_create("-")) {
+			exit(EXIT_FAILURE);
+		}
+
+		plot_add(p, lc);
+	}
+
 }
 
