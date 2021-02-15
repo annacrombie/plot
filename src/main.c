@@ -29,14 +29,7 @@ main(int argc, char **argv)
 
 	logfile = stderr;
 
-	int lc = parse_opts(&p, argc, argv);
-
-	if (p.datasets == 0) {
-		if (!pipeline_create("-")) {
-			return 1;
-		}
-		plot_add(&p, lc);
-	}
+	parse_opts(&p, argc, argv);
 
 	if (p.flags & plot_flag_animate) {
 		animate_plot(&p, p.follow_rate, animate_cb);

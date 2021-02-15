@@ -1,4 +1,4 @@
-#ifndef _OPTS_H
-#define _OPTS_H
-int parse_opts(struct plot *p, int argc, char **argv);
+#ifndef OPTS_H
+#define OPTS_H
+void parse_opts(struct plot *p, int argc, char **argv);
 #endif
