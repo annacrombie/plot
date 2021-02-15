@@ -82,7 +82,8 @@ pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size)
 
 	if (pl->len >= PIPELINE_LEN) {
 		return false;
-	} else if (!dproc_registry[proc].ctx_validate(ctx, size)) {
+	} else if (dproc_registry[proc].ctx_validate &&
+		   !dproc_registry[proc].ctx_validate(ctx, size)) {
 		return false;
 	}
 
