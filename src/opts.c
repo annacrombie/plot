@@ -179,12 +179,18 @@ set_fixed_plot_bounds(char *s, struct plot *p)
 #define ARG_SEP ':'
 
 // Make sure no names are prefixes of other names
+enum arg_type {
+	arg_type_none,
+	arg_type_int,
+	arg_type_float,
+};
+
 static struct {
 	const char *name;
-	bool takes_arg;
+	enum arg_type arg;
 } dproc_info[data_proc_type_count] = {
-	[data_proc_avg] = { "avg", true },
-	[data_proc_sma] = { "sma", true },
+	[data_proc_avg] = { "avg", arg_type_int },
+	[data_proc_sma] = { "sma", arg_type_int },
 };
 
 static void
@@ -192,9 +198,10 @@ parse_pipeline(char *path, struct plot *p)
 {
 	uint32_t i, namelen, toklen, ctx_size;
 	char *tok = strtok(path, PIPE_SEP), *endptr;
-	int32_t tmp;
 	const char *err;
 	void *ctx;
+	int32_t tmp_int;
+	float tmp_float;
 
 	do {
 		toklen = strlen(tok);
@@ -223,20 +230,35 @@ parse_pipeline(char *path, struct plot *p)
 			} else if (!tok[namelen + 1]) {
 				err = "missing argument";
 				goto err;
-			} else if (!dproc_info[i].name) {
+			}
+
+			switch (dproc_info[i].arg) {
+			case arg_type_none:
 				err = "proc takes no argument";
 				goto err;
-			}
+				break;
+			case arg_type_int:
+				tmp_int = strtol(&tok[namelen + 1], &endptr, 10);
+				if (*endptr) {
+					err = "unable to parse integer argument";
+					goto err;
+				}
 
-			tmp = strtol(&tok[namelen + 1], &endptr, 10);
-			if (*endptr) {
-				err = "invalid argument";
-				goto err;
-			}
+				ctx = &tmp_int;
+				ctx_size = sizeof(int32_t);
+				break;
+			case arg_type_float:
+				tmp_float = strtod(&tok[namelen + 1], &endptr);
+				if (*endptr) {
+					err = "unable to parse float argument";
+					goto err;
+				}
 
-			ctx = &tmp;
-			ctx_size = sizeof(int32_t);
-		} else if (dproc_info[i].name) {
+				ctx = &tmp_float;
+				ctx_size = sizeof(float);
+				break;
+			}
+		} else if (dproc_info[i].arg) {
 			err = "missing argument";
 			goto err;
 		}
