@@ -61,8 +61,10 @@ pipeline_create(const char *path, uint8_t pipeline_flags)
 		return false;
 	}
 
-	int flgs = fcntl(fd, F_GETFL);
-	flgs = fcntl(fd, F_SETFL, flgs | O_NONBLOCK);
+	if (pipeline_flags & pipeline_flag_nonblock) {
+		int flgs = fcntl(fd, F_GETFL);
+		flgs = fcntl(fd, F_SETFL, flgs | O_NONBLOCK);
+	}
 
 	++pipelines_len;
 	return true;
