@@ -146,7 +146,13 @@ proc_roc(struct dbuf *out, struct dbuf *in, void *_ctx)
 static bool
 roc_validator(void *ctx, uint32_t size)
 {
-	return true;
+	assert(size == sizeof(float));
+	if (*(float *)ctx == 0.0f) {
+		fprintf(stderr, "argument cannot be 0\n");
+		return false;
+	} else {
+		return true;
+	}
 }
 
 const struct dproc_registry_elem dproc_registry[data_proc_type_count] = {
