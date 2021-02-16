@@ -6,7 +6,7 @@
 #include "log.h"
 
 static void
-proc_avg(struct dbuf *out, struct dbuf *in, void *ctx)
+avg_proc(struct dbuf *out, struct dbuf *in, void *ctx)
 {
 	uint32_t i, n = *(uint32_t *)ctx;
 	double sum;
@@ -27,7 +27,7 @@ proc_avg(struct dbuf *out, struct dbuf *in, void *ctx)
 }
 
 static bool
-avg_validator(void *ctx, uint32_t size)
+avg_init(void *ctx, uint32_t size)
 {
 	assert(size == sizeof(uint32_t));
 
@@ -42,7 +42,7 @@ avg_validator(void *ctx, uint32_t size)
 }
 
 static void
-proc_sma(struct dbuf *out, struct dbuf *in, void *_ctx)
+sma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 {
 	struct {
 		uint32_t n;
@@ -81,7 +81,7 @@ proc_sma(struct dbuf *out, struct dbuf *in, void *_ctx)
 }
 
 static bool
-sma_validator(void *ctx, uint32_t size)
+sma_init(void *ctx, uint32_t size)
 {
 	assert(size == sizeof(uint32_t));
 
@@ -99,7 +99,7 @@ sma_validator(void *ctx, uint32_t size)
 }
 
 static void
-proc_cma(struct dbuf *out, struct dbuf *in, void *_ctx)
+cma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 {
 	struct {
 		double cma;
@@ -120,7 +120,7 @@ proc_cma(struct dbuf *out, struct dbuf *in, void *_ctx)
 }
 
 static void
-proc_roc(struct dbuf *out, struct dbuf *in, void *_ctx)
+roc_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 {
 	struct {
 		float t;
@@ -144,7 +144,7 @@ proc_roc(struct dbuf *out, struct dbuf *in, void *_ctx)
 }
 
 static bool
-roc_validator(void *ctx, uint32_t size)
+roc_init(void *ctx, uint32_t size)
 {
 	assert(size == sizeof(float));
 	if (*(float *)ctx == 0.0f) {
@@ -156,8 +156,8 @@ roc_validator(void *ctx, uint32_t size)
 }
 
 const struct dproc_registry_elem dproc_registry[data_proc_type_count] = {
-	[data_proc_avg] = { proc_avg, avg_validator },
-	[data_proc_sma] = { proc_sma, sma_validator },
-	[data_proc_cma] = { proc_cma, NULL },
-	[data_proc_roc] = { proc_roc, roc_validator },
+	[data_proc_avg] = { avg_proc, avg_init },
+	[data_proc_sma] = { sma_proc, sma_init },
+	[data_proc_cma] = { cma_proc },
+	[data_proc_roc] = { roc_proc, roc_init },
 };

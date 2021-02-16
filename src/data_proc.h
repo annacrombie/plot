@@ -8,8 +8,8 @@
 
 struct dbuf { double dat[DATA_LEN]; uint32_t i, len; };
 
-typedef void ((*dproc))(struct dbuf *out, struct dbuf *in, void *ctx);
-typedef bool ((*dproc_ctx_validate))(void *ctx, uint32_t size);
+typedef void ((*data_proc_proc))(struct dbuf *out, struct dbuf *in, void *ctx);
+typedef bool ((*data_proc_init))(void *ctx, uint32_t size);
 
 enum data_proc_type {
 	data_proc_avg,
@@ -20,8 +20,8 @@ enum data_proc_type {
 };
 
 struct dproc_registry_elem {
-	dproc dproc;
-	dproc_ctx_validate ctx_validate;
+	data_proc_proc proc;
+	data_proc_init init;
 };
 
 extern const struct dproc_registry_elem dproc_registry[data_proc_type_count];
