@@ -18,7 +18,7 @@
 struct pipeline_elem {
 	uint8_t ctx[PIPELINE_CTX];
 	struct dbuf buf;
-	dproc proc;
+	data_proc_proc proc;
 };
 
 struct pipeline {
@@ -86,15 +86,15 @@ pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size)
 
 	if (pl->len >= PIPELINE_LEN) {
 		return false;
-	} else if (dproc_registry[proc].ctx_validate &&
-		   !dproc_registry[proc].ctx_validate(ctx, size)) {
+	} else if (dproc_registry[proc].init &&
+		   !dproc_registry[proc].init(ctx, size)) {
 		return false;
 	}
 
 	struct pipeline_elem *pe = &pl->pipe[pl->len];
 
 	memcpy(pe->ctx, ctx, size);
-	pe->proc = dproc_registry[proc].dproc;
+	pe->proc = dproc_registry[proc].proc;
 
 	++pl->len;
 	return true;
