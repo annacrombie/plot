@@ -14,22 +14,49 @@ plot reads sequences of numbers and outputs a line graph.
 
 # OPTIONS
 
-*-i* (<filename> | -)
-	add filename (or stdin) as a data source.  see *INPUT*
+## INPUT
 
-*-a* <n>
-	average n inputs per data point.  For example, given -a 5, every 5
-	numbers read will be averaged together to produce one output
+*-i* <filename>[:flags]
+	add <filename> as a data source.  This also creates a data pipeline,
+	which is either empty, or copied from the _default pipeline_.  The
+	filename `-` indicates stdin.
 
-*-f*
-	"follow" input, e.g. continuously monitor inputs for new data and
-	redraw the plot every time a new number is read.  Additionally, when
-	the length of the plot reaches the maximum width, begin scrolling to
-	the left.
+	The data format accepted by plot is very lenient.  The parser scans the
+	input until a digit is found, and attempts to parse the number.  If
+	successful, the number is added to the input, otherwise the digit is
+	skipped.
 
-*-A*
-	"animate" input by following and exit. The behaviour is identical
-	to the "follow" -f feature, but upon input EOF, the plot stops.
+	Flags modify how the file is accessed.  Each flag is a single
+	character, order and duplicates make no difference and are not checked.
+
+	Available flags are:
+	- `r` - *rewind*(3) the file if an EOF is encountered and start reading
+	  new data from the beginning. this flag only has an effect in follow
+	  mode
+	- `n` - open the file in nonblocking mode.  be careful
+
+	If _plot_ is invoked without any `-i` options, an implicit `-i -` is
+	added.  i.e. stdin is added as an input and a data pipeline is set up
+	for it.
+
+*-p* <pipeline>
+	The syntax for a pipeline element is *<data processor>*[:argument].
+	Wether or not an argument is required depends on the data processor.
+	Multiple processors can be used, separated by the pipe character `|`.
+	In this case, the output of each successive processor is passed as
+	input to the next.
+
+	*DEFAULT PIPELINE*
+
+	If a pipeline is specified before any input (before
+	any `-i`s in the command line), it is recorded as the _default
+	pipeline_.  Any pipeline created afterwards (with the `-p` flag or
+	implicitly with the `-i` flag) will have this _default pipeline_
+	prepended to it.
+
+	See *DATA PROCESSORS* for a list available processors
+
+## DISPLAY / FORMATTING
 
 *-b* [min]:[max]
 	set fixed plot bounds (instead of dynamically evaluating bounds).
@@ -79,7 +106,13 @@ plot reads sequences of numbers and outputs a line graph.
 	format string template looks something like this: "%<width>.<prec>f"
 
 *-c* <color>
-	color of next data source.  see *COLORS*
+	color of next data source.  A color is specified using a character.
+	The available characters are:
+
+	*b*lack, *r*ed, *g*reen, *y*ellow, b*l*ue, *m*agenta, *c*yan, *w*hite
+
+	Additionally, the character may be capitalized to get the "bright"
+	version of the color. E.g. R == bright red.
 
 *-m*
 	visually merge overlapping lines
@@ -105,25 +138,44 @@ plot reads sequences of numbers and outputs a line graph.
 	If you pass an insufficient number of codepoints, the missing ones will
 	show up as '?'.
 
+## FOLLOW / ANIMATE
+
+*-f*
+	"follow" input, e.g. continuously monitor inputs for new data and
+	redraw the plot every time a new number is read.  Additionally, when
+	the length of the plot reaches the maximum width, begin scrolling to
+	the left.
+
+*-A*
+	"animate" input by following and exit. The behaviour is identical
+	to the "follow" -f feature, but upon input EOF, the plot stops.
+
+*-S* <ms>
+	set the framerate for animate/follow modes
+
+
+## HELP
+
 *-h*
-	Show usage
+	Show a brief help message
 
-# INPUT
+# DATA PROCESSORS
 
-Multiple inputs can be specified with *-i*.  If no inputs are specified, stdin
-is read. Invalid (not 0-9, or -) characters in the input are skipped.  Numbers
-are parsed using *strtod*(3).  The sequence "1, 2 3aaaaa4" would be interpreted
-the same as the sequence "1 2.0 3 4". This allows plot to read a list of
-numbers delimited in almost any way.
-
-# COLORS
-
-A color is specified using a character.  The available characters are:
-
-*b*lack, *r*ed, *g*reen, *y*ellow, b*l*ue, *m*agenta, *c*yan, *w*hite
-
-Additionally, the character may be capitalized to get the "bright" version of
-the color. E.g. R == bright red.
+[- name
+:- argument
+:< description
+|  avg
+:  integer
+:  averages every n inputs together into a single data point
+|  sma
+:  integer
+:  a simple moving average (boxcar filter) for n inputs
+|  cma
+:  none
+:  a cumulative moving average
+|  roc
+:  float
+:  determines rate of change with the basic formula (val - old_val) / t
 
 # EXAMPLE
 
