@@ -286,6 +286,9 @@ add_input(char *path, struct plot *p, enum color c)
 		*s = 0;
 		for (s = s + 1; s && *s; ++s) {
 			switch (*s) {
+			case 'n':
+				pipeline_flags |= pipeline_flag_nonblock;
+				break;
 			case 'r':
 				pipeline_flags |= pipeline_flag_rewind;
 				break;

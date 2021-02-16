@@ -7,7 +7,8 @@
 #include "plot.h"
 
 enum pipeline_flags {
-	pipeline_flag_rewind = 1 << 0,
+	pipeline_flag_rewind   = 1 << 0,
+	pipeline_flag_nonblock = 1 << 1,
 };
 
 bool pipeline_create(const char *path, uint8_t pipeline_flags);
