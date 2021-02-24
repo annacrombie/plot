@@ -43,35 +43,10 @@ version_info = configuration_data()
 version_info.set('version', meson.project_version())
 version_info.set('vcs_tag', git_sha)
 
-deps = [
-	cc.find_library('m', required : true),
-]
-include = [include_directories(['src'])]
+libm = cc.find_library('m', required: true)
+include = [include_directories(['include'])]
 
-src = files([
-	'src/animate.c',
-	'src/data_pipe.c',
-	'src/data_proc.c',
-	'src/display.c',
-	'src/input.c',
-	'src/log.c',
-	'src/main.c',
-	'src/opts.c',
-	'src/plot.c',
-	'src/util.c',
-]) + [configure_file(
-	configuration: version_info,
-	input: files('src/version.c.in'),
-	output: 'version.c'
-)]
-
-plot = executable(
-	'plot',
-	sources: src,
-	dependencies: deps,
-	include_directories: include,
-	install: true
-)
+subdir('src')
 
 if get_option('test')
 	subdir('tests')
