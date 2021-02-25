@@ -2,10 +2,12 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "data_proc.h"
 #include "input.h"
@@ -13,7 +15,36 @@
 #include "plot.h"
 #include "util.h"
 
-#define MAX_AHEAD 8
+bool
+plot_file_input_init(struct plot_file_input *in, const char *path,
+	enum plot_file_input_flags flags)
+{
+	int fd, oldflags;
+
+	/* struct input *in = &pipelines[pipelines_len].in; */
+
+	if (strcmp(path, "-") == 0) {
+		in->src = stdin;
+	} else if (!(in->src = fopen(path, "r"))) {
+		fprintf(stderr, "error opening file '%s': %s\n", path,
+			strerror(errno));
+		return false;
+	}
+
+	if (flags & plot_file_input_flag_nonblock) {
+		if ((fd = fileno(in->src) == -1)) {
+			fprintf(stderr, "couldn't get file descriptor for '%s': %s\n",
+				path, strerror(errno));
+			return false;
+		}
+
+		oldflags = fcntl(fd, F_GETFL);
+		fcntl(fd, F_SETFL, oldflags | O_NONBLOCK);
+	}
+
+	return true;
+}
+
 
 static bool
 start_of_number(char c)
@@ -29,14 +60,20 @@ start_of_number(char c)
 }
 
 bool
-input_read(struct input *in)
+plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 {
 	char *endptr = NULL;
 	size_t i = 0, buflen, oldi = 0;
 	double tmp;
-	struct dbuf *out = &in->out;
 
 	if (feof(in->src)) {
+		if (in->flags & plot_file_input_flag_infinite) {
+			clearerr(in->src);
+			if (in->flags & plot_file_input_flag_rewind) {
+				rewind(in->src);
+			}
+		}
+
 		return false;
 	}
 
@@ -51,7 +88,7 @@ input_read(struct input *in)
 
 	if (!(buflen = fread(&in->buf[in->rem], 1, MAX_INBUF - in->rem, in->src))) {
 		if (errno == EAGAIN || !errno) {
-			return true;
+			return false;
 		} else {
 			fprintf(stderr, "error reading from file %d: %s\n", errno, strerror(errno));
 			return false;

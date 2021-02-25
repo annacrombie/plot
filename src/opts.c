@@ -8,10 +8,13 @@
 
 #include "data_pipe.h"
 #include "data_proc.h"
+#include "input.h"
 #include "log.h"
 #include "plot.h"
 #include "util.h"
 #include "version.h"
+
+struct plot_file_input file_input_ctxs[MAX_DATA] = { 0 };
 
 static void
 print_usage(FILE *f)
@@ -280,17 +283,17 @@ static void
 add_input(char *path, struct plot *p, enum color c)
 {
 	char *s;
-	uint8_t pipeline_flags = 0;
+	uint8_t flags = 0;
 
 	if ((s = strchr(path, ':'))) {
 		*s = 0;
 		for (s = s + 1; s && *s; ++s) {
 			switch (*s) {
 			case 'n':
-				pipeline_flags |= pipeline_flag_nonblock;
+				flags |= plot_file_input_flag_nonblock;
 				break;
 			case 'r':
-				pipeline_flags |= pipeline_flag_rewind;
+				flags |= plot_file_input_flag_rewind;
 				break;
 			default:
 				fprintf(stderr, "invalid pipeline flag: '%c'\n", *s);
@@ -299,7 +302,10 @@ add_input(char *path, struct plot *p, enum color c)
 		}
 	}
 
-	if (!pipeline_create(path, pipeline_flags)) {
+	if (!plot_file_input_init(&file_input_ctxs[p->datasets], path, flags)) {
+		exit(EXIT_FAILURE);
+	} else if (!pipeline_create((pipeline_input_func)plot_file_input_read,
+		&file_input_ctxs[p->datasets])) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -333,6 +339,8 @@ parse_opts(struct plot *p, int argc, char **argv)
 	char opt;
 	int lc = 0;
 	long tmp;
+	uint32_t i;
+	enum plot_file_input_flags global_flags = 0;
 
 	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:mp:s:S:x:y:")) != -1) {
 		switch (opt) {
@@ -361,6 +369,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			set_plot_dimensions(optarg, p);
 			break;
 		case 'f':
+			global_flags |= plot_file_input_flag_infinite;
 			p->flags |= plot_flag_follow;
 			break;
 		case 'i':
@@ -398,12 +407,11 @@ parse_opts(struct plot *p, int argc, char **argv)
 	}
 
 	if (p->datasets == 0) {
-		if (!pipeline_create("-", 0)) {
-			exit(EXIT_FAILURE);
-		}
-
-		plot_add(p, lc);
+		add_input("-", p, lc);
 	}
 
+	for (i = 0; i < p->datasets; ++i) {
+		file_input_ctxs[i].flags |= global_flags;
+	}
 }
 

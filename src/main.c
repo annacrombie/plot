@@ -16,7 +16,6 @@ animate_cb(struct plot *p)
 bool
 follow_cb(struct plot *p)
 {
-	pipeline_reset_eofs();
 	pipeline_fast_fwd(p);
 	return true;
 }
