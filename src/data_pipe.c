@@ -2,13 +2,10 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "data_pipe.h"
 #include "data_proc.h"
-#include "input.h"
 #include "log.h"
 #include "plot.h"
 
@@ -22,9 +19,13 @@ struct pipeline_elem {
 };
 
 struct pipeline {
-	struct input in;
+	struct {
+		pipeline_input_func read;
+		void *ctx;
+		struct dbuf out;
+	} in;
 	struct pipeline_elem pipe[PIPELINE_LEN];
-	uint8_t len, flags;
+	uint8_t len;
 	uint32_t total_len;
 };
 
@@ -33,38 +34,16 @@ static struct pipeline pipelines[MAX_DATA] = { 0 };
 static uint32_t pipelines_len = 0;
 
 bool
-pipeline_create(const char *path, uint8_t pipeline_flags)
+pipeline_create(pipeline_input_func input_func, void *input_ctx)
 {
-	int fd;
-
 	if (pipelines_len >= MAX_DATA) {
 		return false;
 	}
 
 	memcpy(&pipelines[pipelines_len], &default_pipeline, sizeof(struct pipeline));
 
-	pipelines[pipelines_len].flags = pipeline_flags;
-
-	struct input *in = &pipelines[pipelines_len].in;
-
-	if (strcmp(path, "-") == 0) {
-		in->src = stdin;
-	} else if (!(in->src = fopen(path, "r"))) {
-		fprintf(stderr, "error opening file '%s': %s\n", path,
-			strerror(errno));
-		return false;
-	}
-
-	if ((fd = fileno(in->src) == -1)) {
-		fprintf(stderr, "couldn't get file descriptor for '%s': %s\n",
-			path, strerror(errno));
-		return false;
-	}
-
-	if (pipeline_flags & pipeline_flag_nonblock) {
-		int flgs = fcntl(fd, F_GETFL);
-		flgs = fcntl(fd, F_SETFL, flgs | O_NONBLOCK);
-	}
+	pipelines[pipelines_len].in.read = input_func;
+	pipelines[pipelines_len].in.ctx = input_ctx;
 
 	++pipelines_len;
 	return true;
@@ -126,7 +105,7 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 	if (max_new == 0 || in->len - in->i < max_new) {
 		in = &pl->in.out;
 
-		if (!input_read(&pl->in)) {
+		if (!pl->in.read(pl->in.ctx, &pl->in.out)) {
 			/* L("no input"); */
 			return false;
 		}
@@ -220,20 +199,5 @@ void
 pipeline_fast_fwd(struct plot *p)
 {
 	while (pipeline_exec_all(p, 0)) {
-	}
-}
-
-void
-pipeline_reset_eofs(void)
-{
-	uint32_t i;
-	for (i = 0; i < pipelines_len; ++i) {
-		if (feof(pipelines[i].in.src)) {
-			clearerr(pipelines[i].in.src);
-
-			if (pipelines[i].flags & pipeline_flag_rewind) {
-				rewind(pipelines[i].in.src);
-			}
-		}
 	}
 }
