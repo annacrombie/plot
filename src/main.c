@@ -1,22 +1,27 @@
 #include "posix.h"
 
 #include "animate.h"
-#include "data_pipe.h"
-#include "input.h"
 #include "log.h"
 #include "opts.h"
 #include "plot.h"
 
+void
+fast_fwd(struct plot *p)
+{
+	while (plot_fetch(p, 0)) {
+	}
+}
+
 bool
 animate_cb(struct plot *p)
 {
-	return pipeline_exec_all(p, 1);
+	return plot_fetch(p, 1);
 }
 
 bool
 follow_cb(struct plot *p)
 {
-	pipeline_fast_fwd(p);
+	fast_fwd(p);
 	return true;
 }
 
@@ -35,7 +40,7 @@ main(int argc, char **argv)
 	} else if (p.flags & plot_flag_follow) {
 		animate_plot(&p, p.follow_rate, follow_cb);
 	} else {
-		pipeline_fast_fwd(&p);
+		fast_fwd(&p);
 		plot_plot(&p);
 	}
 

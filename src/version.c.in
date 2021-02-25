@@ -1,8 +1,8 @@
 #include "posix.h"
 
-#include "version.h"
+#include "plot.h"
 
-const struct version version = {
+const struct plot_version plot_version = {
 	.version = "@version@",
 	.vcs_tag = "@vcs_tag@",
 };

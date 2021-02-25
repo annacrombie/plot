@@ -3,6 +3,7 @@
 #include <float.h>
 #include <string.h>
 
+#include "data_pipe.h"
 #include "display.h"
 #include "input.h"
 #include "plot.h"
@@ -44,7 +45,7 @@ plot_init(struct plot *plot)
 	plot->y_label.prec = 2;
 	plot->y_label.side = 1;
 
-	plot_set_charset(plot, PCUNICODE);
+	plot_set_charset(plot, plot_charset_unicode);
 
 	plot->height = 24;
 	plot->width = 80;
@@ -61,7 +62,7 @@ plot_set_custom_charset(struct plot *plot, char *str, size_t len)
 	size_t i, j, k;
 	unsigned int bytes;
 
-	plot_set_charset(plot, PCCUSTOM);
+	plot_set_charset(plot, plot_charset_custom);
 
 	for (i = j = 0; i < 16; i++) {
 		if (i == 1 || i == 2 || i == 4 || i == 8) {
@@ -82,44 +83,61 @@ plot_set_custom_charset(struct plot *plot, char *str, size_t len)
 	}
 }
 
-
-void
-plot_add(struct plot *plot, int color)
+bool
+plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_func, void *input_ctx)
 {
+	if (!plot_pipeline_create(input_func, input_ctx)) {
+		return false;
+	}
+
 	if (color != 0) {
 		plot->flags |= plot_flag_color;
 	}
 
 	plot->data[plot->datasets].len = 0;
 	plot->data[plot->datasets].color = color;
-	plot->datasets++;
+	++plot->datasets;
+
+	return true;
 }
 
-static struct plot_bounds
-plot_data_get_bounds(size_t len, struct plot_data *pda)
+bool
+plot_add_static(struct plot *plot, enum plot_color color, double *dat, uint32_t len)
+{
+	if (color != 0) {
+		plot->flags |= plot_flag_color;
+	}
+
+	memcpy(plot->data[plot->datasets].data, dat, sizeof(double) * len);
+
+	plot->data[plot->datasets].len = len;
+	plot->data[plot->datasets].color = color;
+	++plot->datasets;
+
+	return true;
+}
+
+static void
+set_auto_bounds(struct plot *p)
 {
 	size_t i, j;
-	struct plot_bounds bounds;
+	double max = -1 * DBL_MAX;
+	double min = DBL_MAX;
 
-	bounds.max = -1 * DBL_MAX;
-	bounds.min = DBL_MAX;
-
-	for (j = 0; j < len; j++) {
-		for (i = 0; i < pda[j].len; i++) {
-			if (pda[j].data[i] > bounds.max) {
-				bounds.max = pda[j].data[i];
+	for (j = 0; j < p->datasets; j++) {
+		for (i = 0; i < p->data[j].len; i++) {
+			if (p->data[j].data[i] > max) {
+				max = p->data[j].data[i];
 			}
-			if (pda[j].data[i] < bounds.min) {
-				bounds.min = pda[j].data[i];
+			if (p->data[j].data[i] < min) {
+				min = p->data[j].data[i];
 			}
 		}
 	}
 
-	if (bounds.max == bounds.min) {
-		bounds.max += PLOT_DEFAULT_BOUND;
+	if (max == min) {
+		max += PLOT_DEFAULT_BOUND;
 	}
-
-	return bounds;
 }
 
 static void
@@ -135,7 +153,7 @@ plot_make_labels(struct plot *p)
 	}
 }
 
-int
+bool
 plot_plot(struct plot *plot)
 {
 	size_t i;
@@ -149,18 +167,16 @@ plot_plot(struct plot *plot)
 	}
 
 	if (plot->datasets < 1 || no_data) {
-		return 0;
+		return false;
 	}
 
-
-	/* Determine the max and min of the array*/
 	if (!(plot->flags & plot_flag_fixed_bounds)) {
-		plot->bounds = plot_data_get_bounds(plot->datasets, plot->data);
+		set_auto_bounds(plot);
 	}
 
 	plot_make_labels(plot);
 
 	plot_display(plot);
 
-	return 1;
+	return true;
 }

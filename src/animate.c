@@ -56,7 +56,7 @@ animate_plot(struct plot *p, long ms, fetch_new_data fetch)
 	int height = p->height;
 
 	if (p->x_label.every && p->x_label.side) {
-		height += p->x_label.side == side_both ? 2 : 1;
+		height += p->x_label.side == plot_label_side_both ? 2 : 1;
 	}
 
 	struct timespec sleep = {

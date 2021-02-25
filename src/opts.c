@@ -4,17 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
-#include "data_pipe.h"
-#include "data_proc.h"
 #include "input.h"
 #include "log.h"
 #include "plot.h"
-#include "util.h"
-#include "version.h"
 
-struct plot_file_input file_input_ctxs[MAX_DATA] = { 0 };
+static struct plot_file_input file_input_ctxs[MAX_DATA] = { 0 };
+#define FILE_INPUT_BUF 1024
+static char file_input_bufs[MAX_DATA][FILE_INPUT_BUF] = { 0 };
 
 static void
 print_usage(FILE *f)
@@ -51,9 +48,40 @@ print_usage(FILE *f)
 		"\n"
 		"ex.\n"
 		"seq 1 99 | shuf | plot -c g\n",
-		version.version,
-		version.vcs_tag
+		plot_version.version,
+		plot_version.vcs_tag
 		);
+}
+
+enum plot_color
+char_to_color(char c)
+{
+	enum plot_color n;
+
+	switch (c) {
+	case 'b': n = plot_color_black;     break;
+	case 'r': n = plot_color_red;       break;
+	case 'g': n = plot_color_green;     break;
+	case 'y': n = plot_color_yellow;    break;
+	case 'l': n = plot_color_blue;      break;
+	case 'm': n = plot_color_magenta;   break;
+	case 'c': n = plot_color_cyan;      break;
+	case 'w': n = plot_color_white;     break;
+	case 'B': n = plot_color_brblack;   break;
+	case 'R': n = plot_color_brred;     break;
+	case 'G': n = plot_color_brgreen;   break;
+	case 'Y': n = plot_color_bryellow;  break;
+	case 'L': n = plot_color_brblue;    break;
+	case 'M': n = plot_color_brmagenta; break;
+	case 'C': n = plot_color_brcyan;    break;
+	case 'W': n = plot_color_brwhite;   break;
+	default:
+		fprintf(stderr, "invalid color char: %c\n", c);
+		n = 0;
+		break;
+	}
+
+	return n;
 }
 
 static int
@@ -103,48 +131,48 @@ parse_next_num(char **s, long *l)
 }
 
 static int
-set_x_label(char *s, struct x_label *xl)
+set_x_label(char *s, struct plot *p)
 {
 	long l;
 
 	if (parse_next_num(&s, &l)) {
-		xl->every = l;
+		p->x_label.every = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		xl->start = l;
+		p->x_label.start = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		xl->mod = l;
+		p->x_label.mod = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		xl->side = l % 4;
+		p->x_label.side = l % 4;
 	}
 
 	if (*s) {
-		xl->color = char_to_color(*s);
+		p->x_label.color = char_to_color(*s);
 	}
 
 	return 1;
 }
 
 static void
-set_y_label(char *s, struct y_label *yl)
+set_y_label(char *s, struct plot *p)
 {
 	long l;
 
 	if (parse_next_num(&s, &l)) {
-		yl->width = l;
+		p->y_label.width = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		yl->prec = l;
+		p->y_label.prec = l;
 	}
 
 	if (parse_next_num(&s, &l)) {
-		yl->side = l % 4;
+		p->y_label.side = l % 4;
 	}
 }
 
@@ -268,7 +296,7 @@ parse_pipeline(char *path, struct plot *p)
 			goto err;
 		}
 
-		if (!pipeline_append(i, ctx, ctx_size)) {
+		if (!plot_pipeline_append(i, ctx, ctx_size)) {
 			exit(EXIT_FAILURE);
 		}
 	} while ((tok = strtok(NULL, PIPE_SEP)));
@@ -280,7 +308,7 @@ err:
 }
 
 static void
-add_input(char *path, struct plot *p, enum color c)
+add_input(char *path, struct plot *p, enum plot_color c)
 {
 	char *s;
 	uint8_t flags = 0;
@@ -302,14 +330,13 @@ add_input(char *path, struct plot *p, enum color c)
 		}
 	}
 
-	if (!plot_file_input_init(&file_input_ctxs[p->datasets], path, flags)) {
+	if (!plot_file_input_init(&file_input_ctxs[p->datasets],
+		file_input_bufs[p->datasets], FILE_INPUT_BUF, path, flags)) {
 		exit(EXIT_FAILURE);
-	} else if (!pipeline_create((pipeline_input_func)plot_file_input_read,
+	} else if (!plot_add_input(p, c, (plot_input_func)plot_file_input_read,
 		&file_input_ctxs[p->datasets])) {
 		exit(EXIT_FAILURE);
 	}
-
-	plot_add(p, c);
 }
 
 static void
@@ -319,9 +346,9 @@ set_charset(struct plot *p, char *charset)
 
 	if (charset[0] != '%') {
 		if (strcmp(charset, "unicode") == 0) {
-			plot_set_charset(p, PCUNICODE);
+			plot_set_charset(p, plot_charset_unicode);
 		} else if (strcmp(charset, "ascii") == 0) {
-			plot_set_charset(p, PCASCII);
+			plot_set_charset(p, plot_charset_ascii);
 		} else {
 			fprintf(stderr, "invalid charset '%s'\n", charset);
 			exit(EXIT_FAILURE);
@@ -337,7 +364,7 @@ void
 parse_opts(struct plot *p, int argc, char **argv)
 {
 	char opt;
-	int lc = 0;
+	enum plot_color lc = 0;
 	long tmp;
 	uint32_t i;
 	enum plot_file_input_flags global_flags = 0;
@@ -355,7 +382,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			fprintf(stderr, "warning: -a %d is deprecated, "
 				"please use `-p avg:%d` instead\n", tmpu, tmpu);
 
-			if (!pipeline_append(data_proc_avg, &tmpu, sizeof(uint32_t))) {
+			if (!plot_pipeline_append(data_proc_avg, &tmpu, sizeof(uint32_t))) {
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -389,10 +416,10 @@ parse_opts(struct plot *p, int argc, char **argv)
 			p->follow_rate = strtol(optarg, NULL, 10);
 			break;
 		case 'x':
-			set_x_label(optarg, &p->x_label);
+			set_x_label(optarg, p);
 			break;
 		case 'y':
-			set_y_label(optarg, &p->y_label);
+			set_y_label(optarg, p);
 			break;
 		case 'c':
 			lc = char_to_color(*optarg);
@@ -414,4 +441,3 @@ parse_opts(struct plot *p, int argc, char **argv)
 		file_input_ctxs[i].flags |= global_flags;
 	}
 }
-

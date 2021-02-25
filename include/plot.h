@@ -2,111 +2,45 @@
 #define _PLOT_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-#define CHARBUF 31
 #define MAX_DATA 32
 #define MAX_WIDTH 512
 #define MAX_HEIGHT 512
 
 enum plot_charset {
-	PCUNICODE = 0,
-	PCASCII = 1,
-	PCCUSTOM = 2
+	plot_charset_unicode,
+	plot_charset_ascii,
+	plot_charset_custom
 };
 
-/* A piece can be defined by the four sides it touches of the cell it contains.
- * The convention used is that the South side is the starting point, and you go
- * counter-clockwise.  So the piece pointing South and North (│) is represented
- * by 0101 (binary) or 5.
- *
- * Here is a chart of all the pieces
- * piece | binary | hex
- * ' '   | 0000   | 0
- * ╭     | 0011   | 3
- * │     | 0101   | 5
- * ╰     | 0110   | 6
- * ├     | 0111   | 7
- * ╮     | 1001   | 9
- * ─     | 1010   | a
- * ┬     | 1011   | b
- * ╯     | 1100   | c
- * ┤     | 1101   | d
- * ┴     | 1110   | e
- * ┼     | 1111   | f
- */
-
-enum plot_piece {
-	PPBlank     = 0x0,
-	PPUpRight   = 0x3,
-	PPVert      = 0x5,
-	PPDownRight = 0x6,
-	PPTRight    = 0x7,
-	PPRightDown = 0x9,
-	PPHoriz     = 0xa,
-	PPTDown     = 0xb,
-	PPRightUp   = 0xc,
-	PPTLeft     = 0xd,
-	PPTUp       = 0xe,
-	PPCross     = 0xf,
+enum plot_color {
+	plot_color_black,
+	plot_color_red,
+	plot_color_green,
+	plot_color_yellow,
+	plot_color_blue,
+	plot_color_magenta,
+	plot_color_cyan,
+	plot_color_white,
+	plot_color_brblack,
+	plot_color_brred,
+	plot_color_brgreen,
+	plot_color_bryellow,
+	plot_color_brblue,
+	plot_color_brmagenta,
+	plot_color_brcyan,
+	plot_color_brwhite,
 };
 
-enum color {
-	clr_b,
-	clr_r,
-	clr_g,
-	clr_y,
-	clr_l,
-	clr_m,
-	clr_c,
-	clr_w,
-	clr_B,
-	clr_R,
-	clr_G,
-	clr_Y,
-	clr_L,
-	clr_M,
-	clr_C,
-	clr_W,
-};
-
-enum side {
-	side_neither = 0,
-	side_bottom = 1 << 0,
-	side_top    = 1 << 1,
-	side_left   = 1 << 0,
-	side_right  = 1 << 1,
-	side_both   = 3,
-};
-
-/* low 4 bits are plot piece
- * high 4 bits are color
- */
-typedef uint8_t canvas_elem;
-
-struct y_label {
-	char r_fmt[CHARBUF + 1];
-	char l_fmt[CHARBUF + 1];
-	uint32_t width, prec;
-	enum side side;
-};
-
-struct x_label {
-	char label[CHARBUF + 1];
-	int64_t start;
-	uint32_t mod, every;
-	enum color color;
-	enum side side;
-};
-
-struct plot_bounds {
-	double max, min;
-};
-
-struct plot_data {
-	double data[MAX_WIDTH];
-	uint32_t len;
-	enum color color;
+enum plot_label_side {
+	plot_label_side_neither = 0,
+	plot_label_side_bottom  = 1 << 0,
+	plot_label_side_top     = 1 << 1,
+	plot_label_side_left    = 1 << 0,
+	plot_label_side_right   = 1 << 1,
+	plot_label_side_both    = 3,
 };
 
 enum plot_flags {
@@ -117,23 +51,60 @@ enum plot_flags {
 	plot_flag_fixed_bounds      = 1 << 4,
 };
 
+enum plot_data_proc_type {
+	data_proc_avg,
+	data_proc_sma,
+	data_proc_cma,
+	data_proc_roc,
+	data_proc_type_count,
+};
+
+struct plot_data {
+	double data[MAX_WIDTH];
+	uint32_t len;
+	enum plot_color color;
+};
+
 struct plot {
-	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
+	/* low 4 bits are plot piece
+	 * high 4 bits are color */
+	uint8_t canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct plot_data data[MAX_DATA];
 	double labels[MAX_HEIGHT];
 	char charset[16][4];
-	struct plot_bounds bounds;
-	struct x_label x_label;
-	struct y_label y_label;
+	struct {
+		double max, min;
+	} bounds;
+	struct {
+		int64_t start;
+		uint32_t mod, every;
+		enum plot_color color;
+		enum plot_label_side side;
+	} x_label;
+	struct {
+		uint32_t width, prec;
+		enum plot_label_side side;
+	} y_label;
 	uint32_t height, width;
 	uint32_t datasets;
 	uint32_t follow_rate;
 	uint32_t flags;
 };
 
+struct plot_version {
+	const char *version, *vcs_tag;
+};
+
+extern const struct plot_version plot_version;
+
+typedef uint32_t ((*plot_input_func)(void *ctx, double *out, uint32_t out_max));
+
 void plot_init(struct plot *plot);
 void plot_set_charset(struct plot *plot, enum plot_charset charset);
 void plot_set_custom_charset(struct plot *plot, char *str, size_t len);
-void plot_add(struct plot *plot, int color);
-int plot_plot(struct plot *plot);
+bool plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_func, void *input_ctx);
+bool plot_add_static(struct plot *plot, enum plot_color color, double *dat, uint32_t len);
+bool plot_pipeline_append(enum plot_data_proc_type proc, void *ctx, uint32_t size);
+bool plot_fetch(struct plot *plot, uint32_t max_new);
+bool plot_plot(struct plot *plot);
 #endif
