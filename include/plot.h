@@ -121,10 +121,10 @@ struct plot {
 	canvas_elem canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct plot_data data[MAX_DATA];
 	double labels[MAX_HEIGHT];
+	char charset[16][4];
 	struct plot_bounds bounds;
 	struct x_label x_label;
 	struct y_label y_label;
-	enum plot_charset charset;
 	uint32_t height, width;
 	uint32_t datasets;
 	uint32_t follow_rate;
@@ -132,6 +132,8 @@ struct plot {
 };
 
 void plot_init(struct plot *plot);
+void plot_set_charset(struct plot *plot, enum plot_charset charset);
+void plot_set_custom_charset(struct plot *plot, char *str, size_t len);
 void plot_add(struct plot *plot, int color);
 int plot_plot(struct plot *plot);
 #endif

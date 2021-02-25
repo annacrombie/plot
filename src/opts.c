@@ -2,12 +2,12 @@
 
 #include <getopt.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
 #include "data_pipe.h"
 #include "data_proc.h"
-#include "display.h"
 #include "log.h"
 #include "plot.h"
 #include "util.h"
@@ -306,16 +306,16 @@ add_input(char *path, struct plot *p, enum color c)
 	plot_add(p, c);
 }
 
-static enum plot_charset
-set_charset(char *charset)
+static void
+set_charset(struct plot *p, char *charset)
 {
 	size_t len;
 
 	if (charset[0] != '%') {
 		if (strcmp(charset, "unicode") == 0) {
-			return PCUNICODE;
+			plot_set_charset(p, PCUNICODE);
 		} else if (strcmp(charset, "ascii") == 0) {
-			return PCASCII;
+			plot_set_charset(p, PCASCII);
 		} else {
 			fprintf(stderr, "invalid charset '%s'\n", charset);
 			exit(EXIT_FAILURE);
@@ -323,8 +323,7 @@ set_charset(char *charset)
 	} else {
 		len = strlen(charset) - 1;
 
-		set_custom_plot_charset(&charset[1], len);
-		return PCCUSTOM;
+		plot_set_custom_charset(p, &charset[1], len);
 	}
 }
 
@@ -375,7 +374,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			parse_pipeline(optarg, p);
 			break;
 		case 's':
-			p->charset = set_charset(optarg);
+			set_charset(p, optarg);
 			break;
 		case 'S':
 			p->follow_rate = strtol(optarg, NULL, 10);
