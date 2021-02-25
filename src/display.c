@@ -8,13 +8,6 @@
 #include "plot.h"
 #include "util.h"
 
-#define _X_ "x"
-
-/*
-   " ╔║╚╠╗═╦╝╣╩╬"
-   " ╭│╰├╮─┬╯┤┴┼"
- */
-
 static enum plot_piece
 piece_get(struct plot *p, uint16_t x, uint16_t y)
 {
@@ -37,46 +30,6 @@ static void
 color_set(struct plot *p, uint16_t x, uint16_t y, enum color c)
 {
 	p->canvas[x][y] = c << 4 | (p->canvas[x][y] & 0xf);
-}
-
-static char plot_charsets[][16][4] = {
-	{
-		" ", _X_, _X_, "╭", _X_, "│", "╰", "├",
-		_X_, "╮", "─", "┬", "╯", "┤", "┴", "┼",
-	},
-	{
-		" ", _X_, _X_, ".", _X_, "|", "`", "|",
-		_X_, ",", "-", "?", "'", "|", "?", "+",
-	},
-	{
-		"?", _X_, _X_, "?", _X_, "?", "?", "?",
-		_X_, "?", "?", "?", "?", "?", "?", "?",
-	}
-};
-
-void
-set_custom_plot_charset(char *str, size_t len)
-{
-	size_t i, j, k;
-	unsigned int bytes;
-
-	for (i = j = 0; i < 16; i++) {
-		if (i == 1 || i == 2 || i == 4 || i == 8) {
-			continue;
-		}
-
-		bytes = utf8_bytes(&str[j]);
-
-		if (bytes + j > len) {
-			return;
-		}
-
-		for (k = 0; k < bytes; k++) {
-			plot_charsets[PCCUSTOM][i][k] = str[j + k];
-		}
-
-		j += k;
-	}
 }
 
 static enum plot_piece
@@ -183,7 +136,7 @@ plot_print_y_label(struct plot *p, canvas_elem e, double l, enum side side)
 		printf("\033[0m");
 	}
 
-	printf("%s", plot_charsets[p->charset][pp]);
+	printf("%s", p->charset[pp]);
 
 	if (side == side_right) {
 		if (p->flags & plot_flag_color) {
@@ -210,7 +163,7 @@ plot_print_canvas(struct plot *plot)
 				printf("\033[%dm", color_to_ansi_escape_color(color));
 			}
 
-			printf("%s", plot_charsets[plot->charset][piece_get(plot, x, y)]);
+			printf("%s", plot->charset[piece_get(plot, x, y)]);
 
 			if (color) {
 				printf("\033[0m");

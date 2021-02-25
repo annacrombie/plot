@@ -10,6 +10,31 @@
 
 #define PLOT_DEFAULT_BOUND 8
 
+
+#define _X_ ""
+/* " ╔║╚╠╗═╦╝╣╩╬" */
+static const char plot_charsets[][16][4] = {
+	/* " ╭│╰├╮─┬╯┤┴┼" */
+	{
+		" ", _X_, _X_, "╭", _X_, "│", "╰", "├",
+		_X_, "╮", "─", "┬", "╯", "┤", "┴", "┼",
+	},
+	{
+		" ", _X_, _X_, ".", _X_, "|", "`", "|",
+		_X_, ",", "-", "?", "'", "|", "?", "+",
+	},
+	{
+		"?", _X_, _X_, "?", _X_, "?", "?", "?",
+		_X_, "?", "?", "?", "?", "?", "?", "?",
+	}
+};
+
+void
+plot_set_charset(struct plot *plot, enum plot_charset charset)
+{
+	memcpy(plot->charset, plot_charsets[charset], 16 * 4);
+}
+
 void
 plot_init(struct plot *plot)
 {
@@ -19,7 +44,8 @@ plot_init(struct plot *plot)
 	plot->y_label.prec = 2;
 	plot->y_label.side = 1;
 
-	plot->charset = PCUNICODE;
+	plot_set_charset(plot, PCUNICODE);
+
 	plot->height = 24;
 	plot->width = 80;
 
@@ -28,6 +54,34 @@ plot_init(struct plot *plot)
 
 	plot->datasets = 0;
 }
+
+void
+plot_set_custom_charset(struct plot *plot, char *str, size_t len)
+{
+	size_t i, j, k;
+	unsigned int bytes;
+
+	plot_set_charset(plot, PCCUSTOM);
+
+	for (i = j = 0; i < 16; i++) {
+		if (i == 1 || i == 2 || i == 4 || i == 8) {
+			continue;
+		}
+
+		bytes = utf8_bytes(&str[j]);
+
+		if (bytes + j > len) {
+			return;
+		}
+
+		for (k = 0; k < bytes; k++) {
+			plot->charset[i][k] = str[j + k];
+		}
+
+		j += k;
+	}
+}
+
 
 void
 plot_add(struct plot *plot, int color)
@@ -95,7 +149,6 @@ plot_plot(struct plot *plot)
 	}
 
 	if (plot->datasets < 1 || no_data) {
-		//fprintf(stderr, "no data\n");
 		return 0;
 	}
 
