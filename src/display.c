@@ -1,12 +1,48 @@
 #include "posix.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include "display.h"
 #include "plot.h"
-#include "util.h"
+
+/* A piece can be defined by the four sides it touches of the cell it contains.
+ * The convention used is that the South side is the starting point, and you go
+ * counter-clockwise.  So the piece pointing South and North (│) is represented
+ * by 0101 (binary) or 5.
+ *
+ * Here is a chart of all the pieces
+ * piece | binary | hex
+ * ' '   | 0000   | 0
+ * ╭     | 0011   | 3
+ * │     | 0101   | 5
+ * ╰     | 0110   | 6
+ * ├     | 0111   | 7
+ * ╮     | 1001   | 9
+ * ─     | 1010   | a
+ * ┬     | 1011   | b
+ * ╯     | 1100   | c
+ * ┤     | 1101   | d
+ * ┴     | 1110   | e
+ * ┼     | 1111   | f
+ */
+
+enum plot_piece {
+	PPBlank     = 0x0,
+	PPUpRight   = 0x3,
+	PPVert      = 0x5,
+	PPDownRight = 0x6,
+	PPTRight    = 0x7,
+	PPRightDown = 0x9,
+	PPHoriz     = 0xa,
+	PPTDown     = 0xb,
+	PPRightUp   = 0xc,
+	PPTLeft     = 0xd,
+	PPTUp       = 0xe,
+	PPCross     = 0xf,
+};
 
 static enum plot_piece
 piece_get(struct plot *p, uint16_t x, uint16_t y)
@@ -21,13 +57,37 @@ piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
 }
 
 static uint8_t
+color_to_ansi_escape_color(enum plot_color color)
+{
+	switch (color) {
+	case plot_color_black:     return 30;
+	case plot_color_red:       return 31;
+	case plot_color_green:     return 32;
+	case plot_color_yellow:    return 33;
+	case plot_color_blue:      return 34;
+	case plot_color_magenta:   return 35;
+	case plot_color_cyan:      return 36;
+	case plot_color_white:     return 37;
+	case plot_color_brblack:   return 90;
+	case plot_color_brred:     return 91;
+	case plot_color_brgreen:   return 92;
+	case plot_color_bryellow:  return 93;
+	case plot_color_brblue:    return 94;
+	case plot_color_brmagenta: return 95;
+	case plot_color_brcyan:    return 96;
+	case plot_color_brwhite:   return 97;
+	default: assert(false); return 0;
+	}
+}
+
+static uint8_t
 color_get(struct plot *p, uint16_t x, uint16_t y)
 {
 	return p->canvas[x][y] >> 4;
 }
 
 static void
-color_set(struct plot *p, uint16_t x, uint16_t y, enum color c)
+color_set(struct plot *p, uint16_t x, uint16_t y, enum plot_color c)
 {
 	p->canvas[x][y] = c << 4 | (p->canvas[x][y] & 0xf);
 }
@@ -92,42 +152,30 @@ plot_fill_canvas(struct plot *plot)
 	}
 }
 
-static char *yl_l_fmt_fmt = "%%%d.%df ";
-static char *yl_r_fmt_fmt = " %%-%d.%df";
+#define FMT_BUF_LEN 64
 
 static void
-plot_y_label_init_fmts(struct y_label *yl, enum side side)
-{
-	if (side == side_left) {
-		if (!*yl->l_fmt) {
-			snprintf(yl->l_fmt, CHARBUF, yl_l_fmt_fmt, yl->width, yl->prec);
-		}
-	} else if (side == side_right) {
-		if (!*yl->r_fmt) {
-			snprintf(yl->r_fmt, CHARBUF, yl_r_fmt_fmt, yl->width, yl->prec);
-		}
-	}
-}
-
-static void
-plot_print_y_label(struct plot *p, canvas_elem e, double l, enum side side)
+plot_print_y_label(struct plot *p, uint8_t e, double l, enum plot_label_side side)
 {
 	enum plot_piece pp, e_piece = e & 0xf;
-	enum color e_color = e >> 4;
+	enum plot_color e_color = e >> 4;
+	char fmt[FMT_BUF_LEN + 1];
 
-	plot_y_label_init_fmts(&p->y_label, side);
+	/* plot_y_label_init_fmts(&p->y_label, side); */
 
-	if (side == side_left) {
+	if (side == plot_label_side_left) {
 		pp = PPTLeft | ((e_piece & 0x8) >> 2);
 	} else {
 		pp = PPTRight | e_piece;
 	}
 
-	if (side == side_left) {
+	if (side == plot_label_side_left) {
 		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
-		printf(p->y_label.l_fmt, l);
+
+		snprintf(fmt, FMT_BUF_LEN, "%%%d.%df ", p->y_label.width, p->y_label.prec);
+		printf(fmt, l);
 	}
 
 	if (pp == PPCross && e_color > 0) {
@@ -138,11 +186,13 @@ plot_print_y_label(struct plot *p, canvas_elem e, double l, enum side side)
 
 	printf("%s", p->charset[pp]);
 
-	if (side == side_right) {
+	if (side == plot_label_side_right) {
 		if (p->flags & plot_flag_color) {
 			printf("\033[0m");
 		}
-		printf(p->y_label.r_fmt, l);
+
+		snprintf(fmt, FMT_BUF_LEN, " %%-%d.%df", p->y_label.prec, p->y_label.width);
+		printf(fmt, l);
 	}
 }
 
@@ -150,10 +200,10 @@ static void
 plot_print_canvas(struct plot *plot)
 {
 	long x, y;
-	enum color color;
+	enum plot_color color;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		if (plot->y_label.side & side_left) {
+		if (plot->y_label.side & plot_label_side_left) {
 			plot_print_y_label(plot, plot->canvas[0][y], plot->labels[y], 1);
 		}
 
@@ -170,7 +220,7 @@ plot_print_canvas(struct plot *plot)
 			}
 		}
 
-		if (plot->y_label.side & side_right) {
+		if (plot->y_label.side & plot_label_side_right) {
 			plot_print_y_label(plot, plot->canvas[plot->width - 1][y], plot->labels[y], 2);
 		}
 
@@ -188,28 +238,23 @@ plot_print_x_label(struct plot *p, char *buf)
 	long end, tmp, i;
 	int every, start;
 	size_t printed = 0;
-	char fmt[2][32] = { 0 };
+	char fmt[FMT_BUF_LEN + 1];
 
 	if (p->x_label.every <= 0) {
 		return;
 	}
 
-	/* TODO is it possible to do this in the new system?  If not, remove
-	 * these redundant checks
-	 */
-	/* every = p->x_label.every / p->average; */
 	every = p->x_label.every;
 	if (!every) {
 		every = 1;
 	}
 
-	/* start = p->x_label.start / p->average; */
 	start = p->x_label.start;
 
-	snprintf(fmt[0], 31, "%%-%dld", every);
-
 	if (p->x_label.color) {
-		snprintf(fmt[1], 31, "\033[%%dm%%-%dld\033[0m", every);
+		snprintf(fmt, FMT_BUF_LEN, "\033[%%dm%%-%dld\033[0m", every);
+	} else {
+		snprintf(fmt, FMT_BUF_LEN, "%%-%dld", every);
 	}
 
 	if (start % every > 0) {
@@ -218,7 +263,7 @@ plot_print_x_label(struct plot *p, char *buf)
 		tmp = 0;
 	}
 
-	if (p->y_label.side & side_left) {
+	if (p->y_label.side & plot_label_side_left) {
 		end = p->y_label.width + 2 + tmp;
 	} else {
 		end = tmp;
@@ -236,10 +281,10 @@ plot_print_x_label(struct plot *p, char *buf)
 
 		if (tmp == 0 && p->x_label.color) {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
-				fmt[1], color_to_ansi_escape_color(p->x_label.color), tmp);
+				fmt, color_to_ansi_escape_color(p->x_label.color), tmp);
 		} else {
 			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
-				fmt[0], tmp);
+				fmt, tmp);
 		}
 	}
 
@@ -259,14 +304,14 @@ plot_display(struct plot *plot)
 	/* create the graph */
 	plot_fill_canvas(plot);
 
-	if (plot->x_label.side & side_top) {
+	if (plot->x_label.side & plot_label_side_top) {
 		printf("%s", x_label);
 	}
 
 	/* print the graph with labels */
 	plot_print_canvas(plot);
 
-	if (plot->x_label.side & side_bottom) {
+	if (plot->x_label.side & plot_label_side_bottom) {
 		printf("%s", x_label);
 	}
 }

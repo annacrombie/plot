@@ -16,12 +16,16 @@
 #include "util.h"
 
 bool
-plot_file_input_init(struct plot_file_input *in, const char *path,
-	enum plot_file_input_flags flags)
+plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,
+	const char *path, enum plot_file_input_flags flags)
 {
 	int fd, oldflags;
 
-	/* struct input *in = &pipelines[pipelines_len].in; */
+	*in = (struct plot_file_input) {
+		.buf = buf,
+		.buf_max = buf_max,
+		.flags = flags,
+	};
 
 	if (strcmp(path, "-") == 0) {
 		in->src = stdin;
@@ -59,12 +63,13 @@ start_of_number(char c)
 	}
 }
 
-bool
-plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
+uint32_t
+plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 {
 	char *endptr = NULL;
 	size_t i = 0, buflen, oldi = 0;
 	double tmp;
+	uint32_t out_len = 0;
 
 	if (feof(in->src)) {
 		if (in->flags & plot_file_input_flag_infinite) {
@@ -74,10 +79,10 @@ plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 			}
 		}
 
-		return false;
+		return 0;
 	}
 
-	if (in->rem >= MAX_INBUF) {
+	if (in->rem >= in->buf_max) {
 		// grow the buffer if the number of digits remaining is bigger
 		// than the buffer This should only happen with really tiny
 		// values of buf_size, so maybe when the animation related
@@ -86,12 +91,12 @@ plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 		assert(false);
 	}
 
-	if (!(buflen = fread(&in->buf[in->rem], 1, MAX_INBUF - in->rem, in->src))) {
+	if (!(buflen = fread(&in->buf[in->rem], 1, in->buf_max - in->rem, in->src))) {
 		if (errno == EAGAIN || !errno) {
-			return false;
+			return 0;
 		} else {
 			fprintf(stderr, "error reading from file %d: %s\n", errno, strerror(errno));
-			return false;
+			return 0;
 		}
 	}
 
@@ -114,8 +119,8 @@ plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 
 		/* L("i :%d, pos: %ld, %f", out->len, i, tmp); */
 
-		out->dat[out->len] = tmp;
-		if (++out->len >= DATA_LEN) {
+		out[out_len] = tmp;
+		if (++out_len >= out_max) {
 			break;
 		}
 
@@ -126,7 +131,8 @@ plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 		// The last number we read ended right at the end of the
 		// buffer, but there is still more to read.  unread this number
 		// for now in case only a portion of it is in the buffer
-		--out->len;
+		assert(out_len);
+		--out_len;
 		i = oldi;
 	}
 
@@ -134,7 +140,7 @@ plot_file_input_read(struct plot_file_input *in, struct dbuf *out)
 		memmove(in->buf, &in->buf[i], in->rem);
 	}
 
-	memset(&in->buf[in->rem], 0, MAX_INBUF - in->rem);
+	memset(&in->buf[in->rem], 0, in->buf_max - in->rem);
 
-	return true;
+	return out_len;
 }

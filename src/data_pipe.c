@@ -20,7 +20,7 @@ struct pipeline_elem {
 
 struct pipeline {
 	struct {
-		pipeline_input_func read;
+		plot_input_func read;
 		void *ctx;
 		struct dbuf out;
 	} in;
@@ -34,7 +34,7 @@ static struct pipeline pipelines[MAX_DATA] = { 0 };
 static uint32_t pipelines_len = 0;
 
 bool
-pipeline_create(pipeline_input_func input_func, void *input_ctx)
+plot_pipeline_create(plot_input_func input_func, void *input_ctx)
 {
 	if (pipelines_len >= MAX_DATA) {
 		return false;
@@ -50,7 +50,7 @@ pipeline_create(pipeline_input_func input_func, void *input_ctx)
 }
 
 bool
-pipeline_append(enum data_proc_type proc, void *ctx, uint32_t size)
+plot_pipeline_append(enum plot_data_proc_type proc, void *ctx, uint32_t size)
 {
 	assert(size < PIPELINE_CTX);
 	assert(proc < data_proc_type_count);
@@ -105,7 +105,7 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 	if (max_new == 0 || in->len - in->i < max_new) {
 		in = &pl->in.out;
 
-		if (!pl->in.read(pl->in.ctx, &pl->in.out)) {
+		if (!(pl->in.out.len = pl->in.read(pl->in.ctx, pl->in.out.dat, DATA_LEN))) {
 			/* L("no input"); */
 			return false;
 		}
@@ -180,7 +180,7 @@ pipeline_sync(struct plot *p)
 }
 
 bool
-pipeline_exec_all(struct plot *p, uint32_t max_new)
+plot_fetch(struct plot *p, uint32_t max_new)
 {
 	uint32_t i;
 	bool read = false;
@@ -193,11 +193,4 @@ pipeline_exec_all(struct plot *p, uint32_t max_new)
 	pipeline_sync(p);
 
 	return read;
-}
-
-void
-pipeline_fast_fwd(struct plot *p)
-{
-	while (pipeline_exec_all(p, 0)) {
-	}
 }
