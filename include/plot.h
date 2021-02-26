@@ -1,13 +1,11 @@
-#ifndef _PLOT_H_
-#define _PLOT_H_
+#ifndef PLOT_H
+#define PLOT_H
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#define MAX_DATA 32
-#define MAX_WIDTH 512
-#define MAX_HEIGHT 512
+#define PLOT_MAX_DATASETS 32
 
 enum plot_charset {
 	plot_charset_unicode,
@@ -60,7 +58,6 @@ enum plot_data_proc_type {
 };
 
 struct plot_data {
-	double data[MAX_WIDTH];
 	uint32_t len;
 	enum plot_color color;
 };
@@ -68,8 +65,9 @@ struct plot_data {
 struct plot {
 	/* low 4 bits are plot piece
 	 * high 4 bits are color */
-	uint8_t canvas[MAX_WIDTH][MAX_HEIGHT];
-	struct plot_data data[MAX_DATA];
+	uint8_t *canvas;
+	double *data_buf;
+	struct plot_data data[PLOT_MAX_DATASETS];
 	char charset[16][4];
 	struct {
 		double max, min;
@@ -98,7 +96,7 @@ extern const struct plot_version plot_version;
 
 typedef uint32_t ((*plot_input_func)(void *ctx, double *out, uint32_t out_max));
 
-void plot_init(struct plot *plot);
+void plot_init(struct plot *plot, uint8_t *canvas, double *data_buf, uint32_t height, uint32_t width);
 void plot_set_charset(struct plot *plot, enum plot_charset charset);
 void plot_set_custom_charset(struct plot *plot, char *str, size_t len);
 bool plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_func, void *input_ctx);

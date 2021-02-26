@@ -29,7 +29,10 @@ int
 main(int argc, char **argv)
 {
 	struct plot p = { 0 };
-	plot_init(&p);
+	static uint8_t canvas[MAX_WIDTH * MAX_HEIGHT];
+	static double data_buf[MAX_WIDTH * MAX_HEIGHT];
+
+	plot_init(&p, canvas, data_buf, 24, 80);
 
 	logfile = stderr;
 

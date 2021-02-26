@@ -30,13 +30,13 @@ struct pipeline {
 };
 
 struct pipeline default_pipeline = { 0 };
-static struct pipeline pipelines[MAX_DATA] = { 0 };
+static struct pipeline pipelines[PLOT_MAX_DATASETS] = { 0 };
 static uint32_t pipelines_len = 0;
 
 bool
 plot_pipeline_create(plot_input_func input_func, void *input_ctx)
 {
-	if (pipelines_len >= MAX_DATA) {
+	if (pipelines_len >= PLOT_MAX_DATASETS) {
 		return false;
 	}
 
@@ -174,7 +174,7 @@ pipeline_sync(struct plot *p)
 		tmp = max - (pipelines[i].total_len - p->data[i].len);
 
 		if (tmp && tmp <= p->data[i].len) {
-			flush_buf(p->data[i].data, &tmp, &p->data[i].len);
+			flush_buf(&p->data_buf[i * p->width], &tmp, &p->data[i].len);
 		}
 	}
 }
@@ -186,7 +186,7 @@ plot_fetch(struct plot *p, uint32_t max_new)
 	bool read = false;
 
 	for (i = 0; i < pipelines_len; ++i) {
-		read |= pipeline_exec(p->data[i].data, &p->data[i].len,
+		read |= pipeline_exec(&p->data_buf[i * p->width], &p->data[i].len,
 			p->width, max_new, &pipelines[i]);
 	}
 

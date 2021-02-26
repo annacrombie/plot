@@ -6,6 +6,7 @@
 #include "data_pipe.h"
 #include "display.h"
 #include "input.h"
+#include "log.h"
 #include "plot.h"
 #include "util.h"
 
@@ -37,23 +38,22 @@ plot_set_charset(struct plot *plot, enum plot_charset charset)
 }
 
 void
-plot_init(struct plot *plot)
+plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
+	uint32_t height, uint32_t width)
 {
-	plot->x_label.side = 1;
-
-	plot->y_label.width = 11;
-	plot->y_label.prec = 2;
-	plot->y_label.side = 1;
+	*plot = (struct plot) {
+		.canvas = canvas,
+		.data_buf = data_buf,
+		.x_label.side = 1,
+		.y_label.width = 11,
+		.y_label.prec = 2,
+		.y_label.side = 1,
+		.height = height,
+		.width = width,
+		.follow_rate = 100,
+	};
 
 	plot_set_charset(plot, plot_charset_unicode);
-
-	plot->height = 24;
-	plot->width = 80;
-
-	plot->flags = 0;
-	plot->follow_rate = 100;
-
-	plot->datasets = 0;
 }
 
 void
@@ -104,16 +104,18 @@ plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_f
 static void
 set_auto_bounds(struct plot *p)
 {
-	size_t i, j;
-	double max = -1 * DBL_MAX, min = DBL_MAX;
+	uint32_t i, j;
+	double max = -1 * DBL_MAX, min = DBL_MAX, *data;
 
 	for (j = 0; j < p->datasets; j++) {
+		data = &p->data_buf[j * p->width];
+
 		for (i = 0; i < p->data[j].len; i++) {
-			if (p->data[j].data[i] > max) {
-				max = p->data[j].data[i];
+			if (data[i] > max) {
+				max = data[i];
 			}
-			if (p->data[j].data[i] < min) {
-				min = p->data[j].data[i];
+			if (data[i] < min) {
+				min = data[i];
 			}
 		}
 	}

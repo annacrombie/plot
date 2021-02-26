@@ -44,16 +44,23 @@ enum plot_piece {
 	PPCross     = 0xf,
 };
 
+uint8_t *
+canvas_get(struct plot *p, uint16_t x, uint16_t y)
+{
+	return &p->canvas[(x * p->height) + y];
+}
+
 static enum plot_piece
 piece_get(struct plot *p, uint16_t x, uint16_t y)
 {
-	return p->canvas[x][y] & 0xf;
+	return *canvas_get(p, x, y) & 0xf;
 }
 
 static void
 piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
 {
-	p->canvas[x][y] = (p->canvas[x][y] & 0xf0) | pp;
+	uint8_t *cv = canvas_get(p, x, y);
+	*cv = (*cv & 0xf0) | pp;
 }
 
 static uint8_t
@@ -83,13 +90,15 @@ color_to_ansi_escape_color(enum plot_color color)
 static uint8_t
 color_get(struct plot *p, uint16_t x, uint16_t y)
 {
-	return p->canvas[x][y] >> 4;
+
+	return *canvas_get(p, x, y) >> 4;
 }
 
 static void
 color_set(struct plot *p, uint16_t x, uint16_t y, enum plot_color c)
 {
-	p->canvas[x][y] = c << 4 | (p->canvas[x][y] & 0xf);
+	uint8_t *cv = canvas_get(p, x, y);
+	*cv = c << 4 | (*cv & 0xf);
 }
 
 static enum plot_piece
@@ -114,11 +123,11 @@ static void
 plot_fill_canvas(struct plot *plot)
 {
 	size_t i, x, y;
-	double ratio;
+	double ratio, *data;
 	long cur, nxt;
 	enum plot_piece next_p;
 
-	memset(plot->canvas, 0, MAX_WIDTH * MAX_HEIGHT);
+	memset(plot->canvas, 0, plot->height * plot->width);
 
 	ratio = (double)(plot->height - 1) / (plot->bounds.max - plot->bounds.min);
 
@@ -127,13 +136,15 @@ plot_fill_canvas(struct plot *plot)
 			continue;
 		}
 
-		nxt = lround((plot->data[i].data[0] - plot->bounds.min) * ratio);
+		data = &plot->data_buf[i * plot->width];
+
+		nxt = lround((data[0] - plot->bounds.min) * ratio);
 
 		for (x = 0; x < plot->data[i].len; x++) {
 			cur = nxt;
 
 			if (x < plot->data[i].len - 1) {
-				nxt = lround((plot->data[i].data[x + 1] - plot->bounds.min) * ratio);
+				nxt = lround((data[x + 1] - plot->bounds.min) * ratio);
 			}
 
 			for (y = 0; y < plot->height; y++) {
@@ -207,7 +218,7 @@ plot_print_canvas(struct plot *plot)
 
 	for (y = plot->height - 1; y >= 0; y--) {
 		if (plot->y_label.side & plot_label_side_left) {
-			plot_print_y_label(plot, plot->canvas[0][y], label_num, 1);
+			plot_print_y_label(plot, *canvas_get(plot, 0, y), label_num, 1);
 		}
 
 		for (x = 0; x < (long)plot->width; x++) {
@@ -224,7 +235,7 @@ plot_print_canvas(struct plot *plot)
 		}
 
 		if (plot->y_label.side & plot_label_side_right) {
-			plot_print_y_label(plot, plot->canvas[plot->width - 1][y], label_num, 2);
+			plot_print_y_label(plot, *canvas_get(plot, plot->width - 1, y), label_num, 2);
 		}
 
 		printf("\n");
@@ -238,7 +249,7 @@ plot_print_canvas(struct plot *plot)
 }
 
 static void
-plot_print_x_label(struct plot *p, char *buf)
+plot_print_x_label(struct plot *p, char *buf, uint32_t buflen)
 {
 	long end, tmp, i;
 	int every, start;
@@ -285,15 +296,15 @@ plot_print_x_label(struct plot *p, char *buf)
 		/* tmp *= p->average; */
 
 		if (tmp == 0 && p->x_label.color) {
-			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
+			printed += snprintf(&buf[printed], buflen - printed,
 				fmt, color_to_ansi_escape_color(p->x_label.color), tmp);
 		} else {
-			printed += snprintf(&buf[printed], MAX_WIDTH - printed,
+			printed += snprintf(&buf[printed], buflen - printed,
 				fmt, tmp);
 		}
 	}
 
-	if (printed < MAX_WIDTH) {
+	if (printed < buflen) {
 		buf[printed] = '\n';
 	}
 }
@@ -301,9 +312,9 @@ plot_print_x_label(struct plot *p, char *buf)
 void
 plot_display(struct plot *plot)
 {
-	char x_label[MAX_WIDTH] = { 0 };
+	char x_label[256] = { 0 };
 	if (plot->x_label.side && plot->x_label.every) {
-		plot_print_x_label(plot, x_label);
+		plot_print_x_label(plot, x_label, 256);
 	}
 
 	/* create the graph */
