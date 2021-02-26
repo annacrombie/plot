@@ -7,11 +7,12 @@
 
 #include "input.h"
 #include "log.h"
+#include "opts.h"
 #include "plot.h"
 
-static struct plot_file_input file_input_ctxs[MAX_DATA] = { 0 };
+static struct plot_file_input file_input_ctxs[PLOT_MAX_DATASETS] = { 0 };
 #define FILE_INPUT_BUF 1024
-static char file_input_bufs[MAX_DATA][FILE_INPUT_BUF] = { 0 };
+static char file_input_bufs[PLOT_MAX_DATASETS][FILE_INPUT_BUF] = { 0 };
 
 static void
 print_usage(FILE *f)
