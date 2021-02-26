@@ -206,8 +206,6 @@ plot_print_canvas(struct plot *plot)
 	double label_num = plot->bounds.max;
 
 	for (y = plot->height - 1; y >= 0; y--) {
-		label_num -= inc;
-
 		if (plot->y_label.side & plot_label_side_left) {
 			plot_print_y_label(plot, plot->canvas[0][y], label_num, 1);
 		}
@@ -230,6 +228,8 @@ plot_print_canvas(struct plot *plot)
 		}
 
 		printf("\n");
+
+		label_num -= inc;
 	}
 
 	if (plot->flags & plot_flag_color) {
