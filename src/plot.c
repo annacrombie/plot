@@ -101,22 +101,6 @@ plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_f
 	return true;
 }
 
-bool
-plot_add_static(struct plot *plot, enum plot_color color, double *dat, uint32_t len)
-{
-	if (color != 0) {
-		plot->flags |= plot_flag_color;
-	}
-
-	memcpy(plot->data[plot->datasets].data, dat, sizeof(double) * len);
-
-	plot->data[plot->datasets].len = len;
-	plot->data[plot->datasets].color = color;
-	++plot->datasets;
-
-	return true;
-}
-
 static void
 set_auto_bounds(struct plot *p)
 {
