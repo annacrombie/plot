@@ -121,8 +121,7 @@ static void
 set_auto_bounds(struct plot *p)
 {
 	size_t i, j;
-	double max = -1 * DBL_MAX;
-	double min = DBL_MAX;
+	double max = -1 * DBL_MAX, min = DBL_MAX;
 
 	for (j = 0; j < p->datasets; j++) {
 		for (i = 0; i < p->data[j].len; i++) {
@@ -139,6 +138,8 @@ set_auto_bounds(struct plot *p)
 		max += PLOT_DEFAULT_BOUND;
 	}
 
+	p->bounds.max = max;
+	p->bounds.min = min;
 }
 
 bool
