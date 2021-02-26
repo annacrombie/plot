@@ -70,7 +70,6 @@ struct plot {
 	 * high 4 bits are color */
 	uint8_t canvas[MAX_WIDTH][MAX_HEIGHT];
 	struct plot_data data[MAX_DATA];
-	double labels[MAX_HEIGHT];
 	char charset[16][4];
 	struct {
 		double max, min;
