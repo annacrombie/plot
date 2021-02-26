@@ -138,19 +138,7 @@ set_auto_bounds(struct plot *p)
 	if (max == min) {
 		max += PLOT_DEFAULT_BOUND;
 	}
-}
 
-static void
-plot_make_labels(struct plot *p)
-{
-	unsigned int i;
-	double inc = (p->bounds.max - p->bounds.min) / (double)(p->height - 1);
-	double s =  p->bounds.min;
-
-	for (i = 0; i < p->height; i++) {
-		p->labels[i] = s;
-		s += inc;
-	}
 }
 
 bool
@@ -173,8 +161,6 @@ plot_plot(struct plot *plot)
 	if (!(plot->flags & plot_flag_fixed_bounds)) {
 		set_auto_bounds(plot);
 	}
-
-	plot_make_labels(plot);
 
 	plot_display(plot);
 
