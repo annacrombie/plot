@@ -146,3 +146,28 @@ plot_fetch(struct plot *p, uint32_t max_new)
 
 	return read;
 }
+
+bool
+plot_fetch_until_full(struct plot *p)
+{
+	uint32_t i;
+	bool read = true, full = false;
+
+	while (read && !full) {
+		read = false;
+
+		for (i = 0; i < p->datasets; ++i) {
+			if (p->data[i].len >= p->width) {
+				full = true;
+				break;
+			}
+
+			read |= pipeline_exec(&p->data_buf[i * p->width], &p->data[i].len,
+				p->width, p->width - p->data[i].len, &p->data[i]);
+		}
+
+		pipeline_sync(p);
+	}
+
+	return full;
+}
