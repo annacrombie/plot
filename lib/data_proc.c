@@ -2,8 +2,8 @@
 
 #include <assert.h>
 
-#include "data_proc.h"
-#include "log.h"
+#include "internal/data_proc.h"
+#include "internal/log.h"
 
 static void
 avg_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx)

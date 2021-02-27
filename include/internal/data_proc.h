@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "plot.h"
+#include "plot/plot.h"
 
 struct dproc_registry_elem {
 	plot_data_proc_proc proc;

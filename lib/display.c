@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "display.h"
-#include "plot.h"
+#include "internal/display.h"
+#include "plot/plot.h"
 
 /* A piece can be defined by the four sides it touches of the cell it contains.
  * The convention used is that the South side is the starting point, and you go

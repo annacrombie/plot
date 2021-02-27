@@ -9,11 +9,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "data_proc.h"
-#include "input.h"
-#include "log.h"
-#include "plot.h"
-#include "util.h"
+#include "internal/data_proc.h"
+#include "internal/log.h"
+#include "internal/util.h"
+#include "plot/file_input.h"
+#include "plot/plot.h"
 
 bool
 plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,

@@ -4,10 +4,9 @@
 #include <errno.h>
 #include <string.h>
 
-#include "data_pipe.h"
-#include "data_proc.h"
-#include "log.h"
-#include "plot.h"
+#include "internal/data_proc.h"
+#include "internal/log.h"
+#include "plot/plot.h"
 
 bool
 plot_pipeline_append(struct plot_data *pd, enum plot_data_proc_type proc, void *ctx, uint32_t ctx_size)

@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "util.h"
+#include "internal/util.h"
 
 unsigned int
 utf8_bytes(const char *utf8)
