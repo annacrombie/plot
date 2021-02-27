@@ -6,7 +6,7 @@
 #include "log.h"
 
 static void
-avg_proc(struct dbuf *out, struct dbuf *in, void *ctx)
+avg_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx)
 {
 	uint32_t i, n = *(uint32_t *)ctx;
 	double sum;
@@ -20,7 +20,7 @@ avg_proc(struct dbuf *out, struct dbuf *in, void *ctx)
 
 		out->dat[out->len] = sum / (double)n;
 
-		if (++out->len > DATA_LEN) {
+		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
 		}
 	}
@@ -33,7 +33,7 @@ avg_init(void *ctx, uint32_t size)
 
 	uint32_t n = *(uint32_t *)ctx;
 
-	if (n == 0 || n >= DATA_LEN) {
+	if (n == 0 || n >= PLOT_DBUF_SIZE) {
 		fprintf(stderr, "invalid argument: %d\n", n);
 		return false;
 	} else {
@@ -42,7 +42,7 @@ avg_init(void *ctx, uint32_t size)
 }
 
 static void
-sma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
+sma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
 	struct {
 		uint32_t n;
@@ -56,7 +56,7 @@ sma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 
 		out->dat[out->len] = 0;
 
-		if (++out->len > DATA_LEN) {
+		if (++out->len > PLOT_DBUF_SIZE) {
 			return;
 		}
 	}
@@ -74,7 +74,7 @@ sma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 
 		out->dat[out->len] = sum / (double)ctx->n;
 
-		if (++out->len > DATA_LEN) {
+		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
 		}
 	}
@@ -87,7 +87,7 @@ sma_init(void *ctx, uint32_t size)
 
 	uint32_t n = *(uint32_t *)ctx;
 
-	if (n == 0 || n >= DATA_LEN) {
+	if (n == 0 || n >= PLOT_DBUF_SIZE) {
 		fprintf(stderr, "invalid argument: %d\n", n);
 		return false;
 	} else if (!(n & 1)) {
@@ -99,7 +99,7 @@ sma_init(void *ctx, uint32_t size)
 }
 
 static void
-cma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
+cma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
 	struct {
 		double cma;
@@ -113,14 +113,14 @@ cma_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 
 		ctx->n += 1.0;
 
-		if (++out->len > DATA_LEN) {
+		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
 		}
 	}
 }
 
 static void
-roc_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
+roc_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
 	struct {
 		float t;
@@ -137,7 +137,7 @@ roc_proc(struct dbuf *out, struct dbuf *in, void *_ctx)
 		out->dat[out->len] = (in->dat[in->i] - ctx->old) / ctx->t;
 		ctx->old = in->dat[in->i];
 
-		if (++out->len > DATA_LEN) {
+		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
 		}
 	}

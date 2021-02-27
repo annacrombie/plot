@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define PLOT_MAX_DATASETS 32
+#define PLOT_DBUF_SIZE 128
+#define PLOT_PIPELINE_CTX_SIZE 32
 
 enum plot_charset {
 	plot_charset_unicode,
@@ -57,7 +58,32 @@ enum plot_data_proc_type {
 	data_proc_type_count,
 };
 
+struct plot_dbuf;
+
+typedef uint32_t ((*plot_input_func)(void *ctx, double *out, uint32_t out_max));
+typedef void ((*plot_data_proc_proc))(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx);
+typedef bool ((*plot_data_proc_init))(void *ctx, uint32_t size);
+
+struct plot_dbuf {
+	double dat[PLOT_DBUF_SIZE];
+	uint32_t i, len;
+};
+
+struct plot_pipeline_elem {
+	uint8_t ctx[PLOT_PIPELINE_CTX_SIZE];
+	struct plot_dbuf buf;
+	plot_data_proc_proc proc;
+};
+
 struct plot_data {
+	struct {
+		plot_input_func read;
+		void *ctx;
+		struct plot_dbuf out;
+	} in;
+	struct plot_pipeline_elem *pipe;
+	uint32_t pipeline_len, pipeline_max;
+	uint32_t total_len;
 	uint32_t len;
 	enum plot_color color;
 };
@@ -67,7 +93,7 @@ struct plot {
 	 * high 4 bits are color */
 	uint8_t *canvas;
 	double *data_buf;
-	struct plot_data data[PLOT_MAX_DATASETS];
+	struct plot_data *data;
 	char charset[16][4];
 	struct {
 		double max, min;
@@ -82,7 +108,7 @@ struct plot {
 		uint32_t width, prec;
 		enum plot_label_side side;
 	} y_label;
-	uint32_t height, width;
+	uint32_t height, width, depth;
 	uint32_t datasets;
 	uint32_t follow_rate;
 	uint32_t flags;
@@ -94,14 +120,17 @@ struct plot_version {
 
 extern const struct plot_version plot_version;
 
-typedef uint32_t ((*plot_input_func)(void *ctx, double *out, uint32_t out_max));
-
-void plot_init(struct plot *plot, uint8_t *canvas, double *data_buf, uint32_t height, uint32_t width);
+void plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
+	struct plot_data *pd, uint32_t height, uint32_t width, uint32_t datasets);
 void plot_set_charset(struct plot *plot, enum plot_charset charset);
 void plot_set_custom_charset(struct plot *plot, char *str, size_t len);
-bool plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_func, void *input_ctx);
-bool plot_add_static(struct plot *plot, enum plot_color color, double *dat, uint32_t len);
-bool plot_pipeline_append(enum plot_data_proc_type proc, void *ctx, uint32_t size);
+void plot_dataset_init(struct plot_data *pd, enum plot_color color,
+	struct plot_pipeline_elem *ple, uint32_t ple_max,
+	plot_input_func input_func, void *input_ctx);
+bool plot_add_dataset(struct plot *plot, enum plot_color color,
+	struct plot_pipeline_elem *ple, uint32_t ple_max,
+	plot_input_func input_func, void *input_ctx);
+bool plot_pipeline_append(struct plot_data *pd, enum plot_data_proc_type proc, void *ctx, uint32_t ctx_size);
 bool plot_fetch(struct plot *plot, uint32_t max_new);
 bool plot_plot(struct plot *plot);
 #endif

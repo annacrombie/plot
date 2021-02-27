@@ -31,8 +31,9 @@ main(int argc, char **argv)
 	struct plot p = { 0 };
 	static uint8_t canvas[MAX_WIDTH * MAX_HEIGHT];
 	static double data_buf[MAX_WIDTH * MAX_HEIGHT];
+	static struct plot_data pd[MAX_DATASETS];
 
-	plot_init(&p, canvas, data_buf, 24, 80);
+	plot_init(&p, canvas, data_buf, pd, 24, 80, MAX_DATASETS);
 
 	logfile = stderr;
 

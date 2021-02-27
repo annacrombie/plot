@@ -3,5 +3,4 @@
 
 #include "plot.h"
 
-bool plot_pipeline_create(plot_input_func input_func, void *input_ctx);
 #endif
