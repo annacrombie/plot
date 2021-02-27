@@ -2,12 +2,9 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "internal/data_proc.h"
 #include "internal/log.h"
@@ -17,11 +14,9 @@
 
 bool
 plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,
-	const char *path, enum plot_file_input_flags flags)
+	FILE *f, enum plot_file_input_flags flags)
 {
 	assert(buf_max);
-
-	int fd, oldflags;
 
 	*in = (struct plot_file_input) {
 		.buf = buf,
@@ -29,24 +24,7 @@ plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,
 		.flags = flags,
 	};
 
-	if (strcmp(path, "-") == 0) {
-		in->src = stdin;
-	} else if (!(in->src = fopen(path, "r"))) {
-		fprintf(stderr, "error opening file '%s': %s\n", path,
-			strerror(errno));
-		return false;
-	}
-
-	if (flags & plot_file_input_flag_nonblock) {
-		if ((fd = fileno(in->src) == -1)) {
-			fprintf(stderr, "couldn't get file descriptor for '%s': %s\n",
-				path, strerror(errno));
-			return false;
-		}
-
-		oldflags = fcntl(fd, F_GETFL);
-		fcntl(fd, F_SETFL, oldflags | O_NONBLOCK);
-	}
+	in->src = f;
 
 	return true;
 }

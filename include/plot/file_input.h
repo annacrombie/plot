@@ -7,8 +7,7 @@
 
 enum plot_file_input_flags {
 	plot_file_input_flag_rewind   = 1 << 0,
-	plot_file_input_flag_nonblock = 1 << 1,
-	plot_file_input_flag_infinite = 1 << 2,
+	plot_file_input_flag_infinite = 1 << 1,
 };
 
 struct plot_file_input {
@@ -21,6 +20,6 @@ struct plot_file_input {
 
 uint32_t plot_file_input_read(struct plot_file_input *in, double *out,
 	uint32_t out_max);
-bool plot_file_input_init(struct plot_file_input *in, char *buf,
-	uint32_t buf_max, const char *path, enum plot_file_input_flags flags);
+bool plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,
+	FILE *f, enum plot_file_input_flags flags);
 #endif
