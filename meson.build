@@ -46,7 +46,8 @@ version_info.set('vcs_tag', git_sha)
 libm = cc.find_library('m', required: true)
 include = [include_directories(['include'])]
 
-subdir('src')
+subdir('lib')
+subdir('cli')
 
 if get_option('test')
 	subdir('tests')
