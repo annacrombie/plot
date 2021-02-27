@@ -1,12 +1,9 @@
 src = files([
-	'animate.c',
 	'data_pipe.c',
 	'data_proc.c',
 	'display.c',
 	'input.c',
 	'log.c',
-	'main.c',
-	'opts.c',
 	'plot.c',
 	'util.c',
 ]) + [configure_file(
@@ -15,7 +12,7 @@ src = files([
 	output: 'version.c'
 )]
 
-plot = executable(
+libplot = library(
 	'plot',
 	sources: src,
 	dependencies: [libm],
