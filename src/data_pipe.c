@@ -9,73 +9,25 @@
 #include "log.h"
 #include "plot.h"
 
-#define PIPELINE_CTX 32
-#define PIPELINE_LEN 4
-
-struct pipeline_elem {
-	uint8_t ctx[PIPELINE_CTX];
-	struct dbuf buf;
-	data_proc_proc proc;
-};
-
-struct pipeline {
-	struct {
-		plot_input_func read;
-		void *ctx;
-		struct dbuf out;
-	} in;
-	struct pipeline_elem pipe[PIPELINE_LEN];
-	uint8_t len;
-	uint32_t total_len;
-};
-
-struct pipeline default_pipeline = { 0 };
-static struct pipeline pipelines[PLOT_MAX_DATASETS] = { 0 };
-static uint32_t pipelines_len = 0;
-
 bool
-plot_pipeline_create(plot_input_func input_func, void *input_ctx)
+plot_pipeline_append(struct plot_data *pd, enum plot_data_proc_type proc, void *ctx, uint32_t ctx_size)
 {
-	if (pipelines_len >= PLOT_MAX_DATASETS) {
-		return false;
-	}
-
-	memcpy(&pipelines[pipelines_len], &default_pipeline, sizeof(struct pipeline));
-
-	pipelines[pipelines_len].in.read = input_func;
-	pipelines[pipelines_len].in.ctx = input_ctx;
-
-	++pipelines_len;
-	return true;
-}
-
-bool
-plot_pipeline_append(enum plot_data_proc_type proc, void *ctx, uint32_t size)
-{
-	assert(size < PIPELINE_CTX);
+	assert(ctx_size < PLOT_PIPELINE_CTX_SIZE);
 	assert(proc < data_proc_type_count);
 
-	struct pipeline *pl;
-
-	if (pipelines_len) {
-		pl = &pipelines[pipelines_len - 1];
-	} else {
-		pl = &default_pipeline;
-	}
-
-	if (pl->len >= PIPELINE_LEN) {
+	if (pd->pipeline_len >= pd->pipeline_max) {
 		return false;
 	} else if (dproc_registry[proc].init &&
-		   !dproc_registry[proc].init(ctx, size)) {
+		   !dproc_registry[proc].init(ctx, ctx_size)) {
 		return false;
 	}
 
-	struct pipeline_elem *pe = &pl->pipe[pl->len];
+	struct plot_pipeline_elem *pe = &pd->pipe[pd->pipeline_len];
 
-	memcpy(pe->ctx, ctx, size);
+	memcpy(pe->ctx, ctx, ctx_size);
 	pe->proc = dproc_registry[proc].proc;
 
-	++pl->len;
+	++pd->pipeline_len;
 	return true;
 }
 
@@ -89,36 +41,36 @@ flush_buf(double *dat, uint32_t *i, uint32_t *len)
 }
 
 static void
-flush_dbuf(struct dbuf *dbuf)
+flush_dbuf(struct plot_dbuf *dbuf)
 {
 	flush_buf(dbuf->dat, &dbuf->i, &dbuf->len);
 }
 
 static bool
 pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new,
-	struct pipeline *pl)
+	struct plot_data *pd)
 {
 	uint32_t i, new, flush;
-	struct dbuf *in;
+	struct plot_dbuf *in;
 
-	in = pl->len ? &pl->pipe[pl->len - 1].buf : &pl->in.out;
+	in = pd->pipeline_len ? &pd->pipe[pd->pipeline_len - 1].buf : &pd->in.out;
 	if (max_new == 0 || in->len - in->i < max_new) {
-		in = &pl->in.out;
+		in = &pd->in.out;
 
-		if (!(pl->in.out.len = pl->in.read(pl->in.ctx, pl->in.out.dat, DATA_LEN))) {
+		if (!(pd->in.out.len = pd->in.read(pd->in.ctx, pd->in.out.dat, PLOT_DBUF_SIZE))) {
 			/* L("no input"); */
 			return false;
 		}
 
-		for (i = 0; i < pl->len; ++i) {
+		for (i = 0; i < pd->pipeline_len; ++i) {
 			/* L("data[%d] <<< %d:%d", i, in->i, in->len); */
 			/* for (uint32_t j = in->i; j < in->len; ++j) { */
 			/* 	fprintf(stderr, "%f, ", in->dat[j]); */
 			/* } */
 			/* fprintf(stderr, "\n"); */
 
-			pl->pipe[i].proc(&pl->pipe[i].buf, in, pl->pipe[i].ctx);
-			in = &pl->pipe[i].buf;
+			pd->pipe[i].proc(&pd->pipe[i].buf, in, pd->pipe[i].ctx);
+			in = &pd->pipe[i].buf;
 		}
 	}
 
@@ -146,13 +98,13 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 	if (new) {
 		memcpy(&out[*out_len], in->dat, new * sizeof(double));
 		*out_len += new;
-		pl->total_len += new;
+		pd->total_len += new;
 		in->i += new;
 	}
 
-	flush_dbuf(&pl->in.out);
-	for (i = 0; i < pl->len; ++i) {
-		flush_dbuf(&pl->pipe[i].buf);
+	flush_dbuf(&pd->in.out);
+	for (i = 0; i < pd->pipeline_len; ++i) {
+		flush_dbuf(&pd->pipe[i].buf);
 	}
 
 	return true;
@@ -163,15 +115,15 @@ pipeline_sync(struct plot *p)
 {
 	uint32_t i, max = 0, tmp;
 
-	for (i = 0; i < pipelines_len; ++i) {
-		tmp = pipelines[i].total_len - p->data[i].len;
+	for (i = 0; i < p->datasets; ++i) {
+		tmp = p->data[i].total_len - p->data[i].len;
 		if (max < tmp) {
 			max = tmp;
 		}
 	}
 
-	for (i = 0; i < pipelines_len; ++i) {
-		tmp = max - (pipelines[i].total_len - p->data[i].len);
+	for (i = 0; i < p->datasets; ++i) {
+		tmp = max - (p->data[i].total_len - p->data[i].len);
 
 		if (tmp && tmp <= p->data[i].len) {
 			flush_buf(&p->data_buf[i * p->width], &tmp, &p->data[i].len);
@@ -185,9 +137,9 @@ plot_fetch(struct plot *p, uint32_t max_new)
 	uint32_t i;
 	bool read = false;
 
-	for (i = 0; i < pipelines_len; ++i) {
+	for (i = 0; i < p->datasets; ++i) {
 		read |= pipeline_exec(&p->data_buf[i * p->width], &p->data[i].len,
-			p->width, max_new, &pipelines[i]);
+			p->width, max_new, &p->data[i]);
 	}
 
 	pipeline_sync(p);

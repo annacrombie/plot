@@ -39,17 +39,20 @@ plot_set_charset(struct plot *plot, enum plot_charset charset)
 
 void
 plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
-	uint32_t height, uint32_t width)
+	struct plot_data *pd, uint32_t height, uint32_t width,
+	uint32_t depth)
 {
 	*plot = (struct plot) {
 		.canvas = canvas,
 		.data_buf = data_buf,
+		.data = pd,
 		.x_label.side = 1,
 		.y_label.width = 11,
 		.y_label.prec = 2,
 		.y_label.side = 1,
 		.height = height,
 		.width = width,
+		.depth = depth,
 		.follow_rate = 100,
 	};
 
@@ -83,10 +86,25 @@ plot_set_custom_charset(struct plot *plot, char *str, size_t len)
 	}
 }
 
-bool
-plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_func, void *input_ctx)
+void
+plot_dataset_init(struct plot_data *pd, enum plot_color color,
+	struct plot_pipeline_elem *ple, uint32_t ple_max,
+	plot_input_func input_func, void *input_ctx)
 {
-	if (!plot_pipeline_create(input_func, input_ctx)) {
+	*pd = (struct plot_data){
+		.in = { .read = input_func, .ctx = input_ctx, },
+		.pipe = ple,
+		.pipeline_max = ple_max,
+		.color = color,
+	};
+}
+
+bool
+plot_add_dataset(struct plot *plot, enum plot_color color,
+	struct plot_pipeline_elem *ple, uint32_t ple_max,
+	plot_input_func input_func, void *input_ctx)
+{
+	if (plot->datasets > plot->depth) {
 		return false;
 	}
 
@@ -94,8 +112,9 @@ plot_add_input(struct plot *plot, enum plot_color color, plot_input_func input_f
 		plot->flags |= plot_flag_color;
 	}
 
-	plot->data[plot->datasets].len = 0;
-	plot->data[plot->datasets].color = color;
+	plot_dataset_init(&plot->data[plot->datasets], color, ple, ple_max,
+		input_func, input_ctx);
+
 	++plot->datasets;
 
 	return true;

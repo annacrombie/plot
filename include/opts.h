@@ -2,6 +2,7 @@
 #define OPTS_H
 #include "plot.h"
 
+#define MAX_DATASETS 32
 #define MAX_WIDTH 512
 #define MAX_HEIGHT 512
 
