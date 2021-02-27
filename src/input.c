@@ -19,6 +19,8 @@ bool
 plot_file_input_init(struct plot_file_input *in, char *buf, uint32_t buf_max,
 	const char *path, enum plot_file_input_flags flags)
 {
+	assert(buf_max);
+
 	int fd, oldflags;
 
 	*in = (struct plot_file_input) {
@@ -82,7 +84,7 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 		return 0;
 	}
 
-	if (in->rem >= in->buf_max) {
+	if (in->rem > (in->buf_max - 1)) {
 		// grow the buffer if the number of digits remaining is bigger
 		// than the buffer This should only happen with really tiny
 		// values of buf_size, so maybe when the animation related
@@ -91,7 +93,7 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 		assert(false);
 	}
 
-	if (!(buflen = fread(&in->buf[in->rem], 1, in->buf_max - in->rem, in->src))) {
+	if (!(buflen = fread(&in->buf[in->rem], 1, (in->buf_max - 1) - in->rem, in->src))) {
 		if (errno == EAGAIN || !errno) {
 			return 0;
 		} else {
@@ -117,7 +119,7 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 
 		oldi = i;
 
-		/* L("i :%d, pos: %ld, %f", out->len, i, tmp); */
+		/* L("i :%d, pos: %ld, %f, '%d', %ld", out_len, i, tmp, *endptr, endptr - &in->buf[i]); */
 
 		out[out_len] = tmp;
 		if (++out_len >= out_max) {
@@ -140,7 +142,7 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 		memmove(in->buf, &in->buf[i], in->rem);
 	}
 
-	memset(&in->buf[in->rem], 0, in->buf_max - in->rem);
+	memset(&in->buf[in->rem], 0, (in->buf_max - 1) - in->rem);
 
 	return out_len;
 }
