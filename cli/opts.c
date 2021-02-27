@@ -1,11 +1,14 @@
 #include "posix.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <plot/file_input.h>
 #include <plot/plot.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "cli/opts.h"
 
@@ -317,14 +320,16 @@ add_input(char *path, struct plot *p, enum plot_color c)
 {
 	char *s;
 	uint8_t flags = 0;
+	int file_flags = 0;
 	struct plot_data *pd;
+	FILE *f;
 
 	if ((s = strchr(path, ':'))) {
 		*s = 0;
 		for (s = s + 1; s && *s; ++s) {
 			switch (*s) {
 			case 'n':
-				flags |= plot_file_input_flag_nonblock;
+				file_flags |= O_NONBLOCK;
 				break;
 			case 'r':
 				flags |= plot_file_input_flag_rewind;
@@ -336,8 +341,29 @@ add_input(char *path, struct plot *p, enum plot_color c)
 		}
 	}
 
+
+	if (strcmp(path, "-") == 0) {
+		f = stdin;
+	} else if (!(f = fopen(path, "r"))) {
+		fprintf(stderr, "error opening file '%s': %s\n", path,
+			strerror(errno));
+		return false;
+	}
+
+	if (file_flags) {
+		int fd, oldflags;
+
+		if ((fd = fileno(f) == -1)) {
+			fprintf(stderr, "couldn't get file descriptor for %s: %s\n", path, strerror(errno));
+			return false;
+		}
+
+		oldflags = fcntl(fd, F_GETFL);
+		fcntl(fd, F_SETFL, oldflags | O_NONBLOCK);
+	}
+
 	if (!plot_file_input_init(&file_input_ctxs[p->datasets],
-		file_input_bufs[p->datasets], FILE_INPUT_BUF, path, flags)) {
+		file_input_bufs[p->datasets], FILE_INPUT_BUF, f, flags)) {
 		exit(EXIT_FAILURE);
 	} else if (!plot_add_dataset(p, c, &pipeline_elems[p->datasets], MAX_PIPELINE_ELEMENTS,
 		(plot_input_func)plot_file_input_read,
