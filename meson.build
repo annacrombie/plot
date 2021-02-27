@@ -44,8 +44,9 @@ version_info.set('version', meson.project_version())
 version_info.set('vcs_tag', git_sha)
 
 libm = cc.find_library('m', required: true)
-include = [include_directories(['include'])]
+install_headers()
 
+subdir('include')
 subdir('lib')
 subdir('cli')
 
