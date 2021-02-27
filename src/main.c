@@ -5,13 +5,6 @@
 #include "opts.h"
 #include "plot.h"
 
-void
-fast_fwd(struct plot *p)
-{
-	while (plot_fetch(p, 0)) {
-	}
-}
-
 bool
 animate_cb(struct plot *p)
 {
@@ -21,7 +14,8 @@ animate_cb(struct plot *p)
 bool
 follow_cb(struct plot *p)
 {
-	fast_fwd(p);
+	while (plot_fetch(p, 0)) {
+	}
 	return true;
 }
 
@@ -44,7 +38,7 @@ main(int argc, char **argv)
 	} else if (p.flags & plot_flag_follow) {
 		animate_plot(&p, p.follow_rate, follow_cb);
 	} else {
-		fast_fwd(&p);
+		plot_fetch_until_full(&p);
 		plot_plot(&p);
 	}
 
