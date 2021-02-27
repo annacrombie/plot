@@ -2,7 +2,7 @@ src = files([
 	'data_pipe.c',
 	'data_proc.c',
 	'display.c',
-	'input.c',
+	'file_input.c',
 	'log.c',
 	'plot.c',
 	'util.c',

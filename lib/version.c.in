@@ -1,6 +1,6 @@
 #include "posix.h"
 
-#include "plot.h"
+#include "plot/plot.h"
 
 const struct plot_version plot_version = {
 	.version = "@version@",

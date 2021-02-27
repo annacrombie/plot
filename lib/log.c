@@ -2,6 +2,6 @@
 
 #include <stdio.h>
 
-#include "log.h"
+#include "internal/log.h"
 
-FILE *logfile = NULL;
+FILE *plot_debug_logfile = NULL;

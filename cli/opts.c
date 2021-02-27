@@ -1,14 +1,13 @@
 #include "posix.h"
 
 #include <getopt.h>
+#include <plot/file_input.h>
+#include <plot/plot.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "input.h"
-#include "log.h"
-#include "opts.h"
-#include "plot.h"
+#include "cli/opts.h"
 
 static struct plot_file_input file_input_ctxs[MAX_DATASETS] = { 0 };
 #define FILE_INPUT_BUF 1024

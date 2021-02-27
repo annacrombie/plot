@@ -1,14 +1,12 @@
 #include "posix.h"
 
+#include <plot/plot.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 
-#include "animate.h"
-#include "input.h"
-#include "plot.h"
-#include "util.h"
+#include "cli/animate.h"
 
 static struct sigaction sigact = { 0 };
 static int loop = 1;

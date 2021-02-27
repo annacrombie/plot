@@ -3,12 +3,11 @@
 #include <float.h>
 #include <string.h>
 
-#include "data_pipe.h"
-#include "display.h"
-#include "input.h"
-#include "log.h"
-#include "plot.h"
-#include "util.h"
+#include "internal/display.h"
+#include "internal/log.h"
+#include "internal/util.h"
+#include "plot/file_input.h"
+#include "plot/plot.h"
 
 #define PLOT_DEFAULT_BOUND 8
 

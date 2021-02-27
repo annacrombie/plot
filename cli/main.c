@@ -1,9 +1,9 @@
 #include "posix.h"
 
-#include "animate.h"
-#include "log.h"
-#include "opts.h"
-#include "plot.h"
+#include <plot/plot.h>
+
+#include "cli/animate.h"
+#include "cli/opts.h"
 
 bool
 animate_cb(struct plot *p)
@@ -28,8 +28,6 @@ main(int argc, char **argv)
 	static struct plot_data pd[MAX_DATASETS];
 
 	plot_init(&p, canvas, data_buf, pd, 24, 80, MAX_DATASETS);
-
-	logfile = stderr;
 
 	parse_opts(&p, argc, argv);
 
