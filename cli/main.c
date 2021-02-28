@@ -41,7 +41,7 @@ main(int argc, char **argv)
 		animate_plot(&p, buf, BUFSIZE, p.follow_rate, follow_cb);
 	} else {
 		plot_fetch_until_full(&p);
-		plot_plot(&p, buf, BUFSIZE);
+		plot_string(&p, buf, BUFSIZE);
 		fputs(buf, stdout);
 		fflush(stdout);
 	}

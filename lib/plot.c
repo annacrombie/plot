@@ -174,8 +174,8 @@ set_auto_bounds(struct plot *p)
 	p->bounds.min = min;
 }
 
-bool
-plot_plot(struct plot *plot, char *buf, uint32_t buflen)
+static bool
+plot_prepare(struct plot *plot)
 {
 	size_t i;
 	int no_data = 1;
@@ -195,8 +195,25 @@ plot_plot(struct plot *plot, char *buf, uint32_t buflen)
 		set_auto_bounds(plot);
 	}
 
-	plot_debug_logfile = stderr;
-	plot_render(plot, buf, buflen);
-
 	return true;
+}
+
+void
+plot_print(struct plot *plot, FILE *f)
+{
+	if (!plot_prepare(plot)) {
+		return;
+	}
+
+	plot_render_file(plot, f);
+}
+
+void
+plot_string(struct plot *plot, char *buf, uint32_t buflen)
+{
+	if (!plot_prepare(plot)) {
+		return;
+	}
+
+	plot_render_string(plot, buf, buflen);
 }
