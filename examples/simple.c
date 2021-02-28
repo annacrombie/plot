@@ -2,11 +2,17 @@
 #include <plot/plot.h>
 #include <stdio.h>
 
+struct sine_wave_ctx {
+	double amp, freq;
+	double x;
+};
+
 static uint32_t
-sin_wave(void *_ctx, double *out, uint32_t out_max)
+sine_wave(void *_ctx, double *out, uint32_t out_max)
 {
-	double *x = _ctx, v = sin(*x);
-	*x += 0.1;
+	struct sine_wave_ctx *ctx = _ctx;
+	double v = sin(ctx->x) * ctx->amp;
+	ctx->x += ctx->freq;
 	out[0] = v;
 	return 1;
 }
@@ -14,10 +20,11 @@ sin_wave(void *_ctx, double *out, uint32_t out_max)
 int
 main(void)
 {
-	double x = 0;
-	struct plot *p = plot_alloc(24, 80, 1);
+	struct plot *p = plot_alloc(24, 80, 12);
 
-	plot_add_dataset(p, plot_color_green, NULL, 0, sin_wave, &x);
+	plot_add_dataset(p, plot_color_cyan, NULL, 0, sine_wave,
+		&(struct sine_wave_ctx){ .amp = 5, .freq = 0.2 });
+
 	plot_fetch_until_full(p);
 	plot_print(p, stdout);
 	plot_free(p);
