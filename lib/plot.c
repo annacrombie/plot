@@ -1,6 +1,7 @@
 #include "posix.h"
 
 #include <float.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "internal/display.h"
@@ -58,8 +59,35 @@ plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
 	plot_set_charset(plot, plot_charset_unicode);
 }
 
+struct plot *
+plot_alloc(uint32_t height, uint32_t width, uint32_t depth)
+{
+	uint32_t offs[] = {
+		sizeof(struct plot),
+		height * width,
+		sizeof(double) * width * depth,
+		sizeof(struct plot_data) * depth,
+	};
+
+	uint8_t *mem = calloc(1, offs[0] + offs[1] + offs[2] + offs[3]);
+
+	plot_init((struct plot *)mem,
+		mem + offs[0],
+		(double *)(mem + offs[0] + offs[1]),
+		(struct plot_data *)(mem + offs[0] + offs[1] + offs[2]),
+		height, width, depth);
+
+	return (struct plot *)mem;
+}
+
 void
-plot_set_custom_charset(struct plot *plot, char *str, size_t len)
+plot_free(struct plot *p)
+{
+	free(p);
+}
+
+void
+plot_set_custom_charset(struct plot *plot, char *str, uint32_t len)
 {
 	size_t i, j, k;
 	unsigned int bytes;

@@ -1,6 +1,7 @@
 #include "posix.h"
 
 #include <plot/plot.h>
+#include <stdio.h>
 
 #include "cli/animate.h"
 #include "cli/opts.h"
