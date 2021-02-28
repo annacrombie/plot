@@ -131,7 +131,7 @@ plot_add_dataset(struct plot *plot, enum plot_color color,
 	struct plot_pipeline_elem *ple, uint32_t ple_max,
 	plot_input_func input_func, void *input_ctx)
 {
-	if (plot->datasets > plot->depth) {
+	if (plot->datasets >= plot->depth) {
 		return false;
 	}
 
