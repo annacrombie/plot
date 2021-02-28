@@ -201,16 +201,14 @@ set_plot_dimensions(char *s, struct plot *p)
 static void
 set_fixed_plot_bounds(char *s, struct plot *p)
 {
-	double d;
+	double min, max;
 
-	p->flags |= plot_flag_fixed_bounds;
-
-	if (parse_next_double(&s, &d)) {
-		p->bounds.min = d;
-	}
-
-	if (parse_next_double(&s, &d)) {
-		p->bounds.max = d;
+	if (parse_next_double(&s, &min)
+	    && parse_next_double(&s, &max)) {
+		plot_fix_bounds(p, min, max);
+	} else {
+		fprintf(stderr, "invalid bounds '%s'", s);
+		exit(EXIT_FAILURE);
 	}
 }
 

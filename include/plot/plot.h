@@ -110,7 +110,7 @@ struct plot {
 	} y_label;
 	uint32_t height, width, depth;
 	uint32_t datasets;
-	uint32_t follow_rate;
+	uint32_t follow_rate; // TODO
 	uint32_t flags;
 };
 
@@ -127,6 +127,8 @@ void plot_free(struct plot *p);
 
 void plot_set_charset(struct plot *plot, enum plot_charset charset);
 void plot_set_custom_charset(struct plot *plot, char *str, uint32_t len);
+void plot_fix_bounds(struct plot *p, double min, double max);
+
 void plot_dataset_init(struct plot_data *pd, enum plot_color color,
 	struct plot_pipeline_elem *ple, uint32_t ple_max,
 	plot_input_func input_func, void *input_ctx);

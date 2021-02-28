@@ -147,6 +147,15 @@ plot_add_dataset(struct plot *plot, enum plot_color color,
 	return true;
 }
 
+
+void
+plot_fix_bounds(struct plot *p, double min, double max)
+{
+	p->flags |= plot_flag_fixed_bounds;
+	p->bounds.min = min;
+	p->bounds.max = max;
+}
+
 static void
 set_auto_bounds(struct plot *p)
 {
