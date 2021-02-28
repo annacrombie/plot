@@ -12,6 +12,7 @@
 #include "plot/plot.h"
 
 struct buf {
+	FILE *file;
 	char *buf;
 	uint32_t bufi;
 	uint32_t buflen;
@@ -20,25 +21,34 @@ struct buf {
 static void
 bufprintf(struct buf *buf, const char *fmt, ...)
 {
-	if (buf->bufi >= buf->buflen) {
-		return;
-	}
-
 	va_list ap;
 	va_start(ap, fmt);
-	buf->bufi += vsnprintf(&buf->buf[buf->bufi], buf->buflen - buf->bufi, fmt, ap);
+
+	if (buf->file) {
+		vfprintf(buf->file, fmt, ap);
+	} else {
+		if (buf->bufi >= buf->buflen) {
+			return;
+		}
+
+		buf->bufi += vsnprintf(&buf->buf[buf->bufi], buf->buflen - buf->bufi, fmt, ap);
+	}
 	va_end(ap);
 }
 
 static void
 bufputc(struct buf *buf, char c)
 {
-	if (buf->bufi >= buf->buflen) {
-		return;
-	}
+	if (buf->file) {
+		fputc(c, buf->file);
+	} else {
+		if (buf->bufi >= buf->buflen) {
+			return;
+		}
 
-	buf->buf[buf->bufi] = c;
-	++buf->bufi;
+		buf->buf[buf->bufi] = c;
+		++buf->bufi;
+	}
 }
 
 /* A piece can be defined by the four sides it touches of the cell it contains.
@@ -337,23 +347,37 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 	bufputc(buf, '\n');
 }
 
+static void
+plot_render(struct plot *plot, struct buf *buf)
+{
+	if (plot->x_label.side & plot_label_side_top) {
+		plot_print_x_label(plot, buf);
+	}
+
+	plot_fill_canvas(plot);
+	plot_print_canvas(plot, buf);
+
+	if (plot->x_label.side & plot_label_side_bottom) {
+		plot_print_x_label(plot, buf);
+	}
+
+	bufputc(buf, 0);
+}
+
 void
-plot_render(struct plot *plot, char *bufmem, uint32_t buflen)
+plot_render_file(struct plot *plot, FILE *f)
+{
+	struct buf buf = { .file = f };
+
+	plot_render(plot, &buf);
+}
+
+void
+plot_render_string(struct plot *plot, char *bufmem, uint32_t buflen)
 {
 	struct buf buf = { .buf = bufmem, .buflen = buflen };
 
 	assert(buflen);
 
-	if (plot->x_label.side & plot_label_side_top) {
-		plot_print_x_label(plot, &buf);
-	}
-
-	plot_fill_canvas(plot);
-	plot_print_canvas(plot, &buf);
-
-	if (plot->x_label.side & plot_label_side_bottom) {
-		plot_print_x_label(plot, &buf);
-	}
-
-	bufputc(&buf, 0);
+	plot_render(plot, &buf);
 }
