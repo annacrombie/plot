@@ -19,6 +19,8 @@ follow_cb(struct plot *p)
 	return true;
 }
 
+#define BUFSIZE (MAX_WIDTH * MAX_HEIGHT)
+
 int
 main(int argc, char **argv)
 {
@@ -26,21 +28,22 @@ main(int argc, char **argv)
 	static uint8_t canvas[MAX_WIDTH * MAX_HEIGHT];
 	static double data_buf[MAX_WIDTH * MAX_HEIGHT];
 	static struct plot_data pd[MAX_DATASETS];
+	static char buf[MAX_WIDTH * MAX_HEIGHT];
 
 	plot_init(&p, canvas, data_buf, pd, 24, 80, MAX_DATASETS);
 
 	parse_opts(&p, argc, argv);
 
 	if (p.flags & plot_flag_animate) {
-		animate_plot(&p, p.follow_rate, animate_cb);
+		animate_plot(&p, buf, BUFSIZE, p.follow_rate, animate_cb);
 	} else if (p.flags & plot_flag_follow) {
-		animate_plot(&p, p.follow_rate, follow_cb);
+		animate_plot(&p, buf, BUFSIZE, p.follow_rate, follow_cb);
 	} else {
 		plot_fetch_until_full(&p);
-		plot_plot(&p);
+		plot_plot(&p, buf, BUFSIZE);
+		fputs(buf, stdout);
+		fflush(stdout);
 	}
-
-	fflush(stdout);
 
 	return 0;
 }

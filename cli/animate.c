@@ -49,7 +49,8 @@ do_esc(enum esc_seq es, ...)
 }
 
 void
-animate_plot(struct plot *p, long ms, fetch_new_data fetch)
+animate_plot(struct plot *p, char *buf, uint32_t bufsize, long ms,
+	fetch_new_data fetch)
 {
 	int height = p->height;
 
@@ -71,7 +72,8 @@ animate_plot(struct plot *p, long ms, fetch_new_data fetch)
 			loop = 0;
 		}
 
-		if (plot_plot(p)) {
+		if (plot_plot(p, buf, bufsize)) {
+			fputs(buf, stdout);
 			do_esc(esc_curs_up, height);
 			fflush(stdout);
 		}

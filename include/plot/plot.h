@@ -133,5 +133,5 @@ bool plot_add_dataset(struct plot *plot, enum plot_color color,
 bool plot_pipeline_append(struct plot_data *pd, enum plot_data_proc_type proc, void *ctx, uint32_t ctx_size);
 bool plot_fetch(struct plot *plot, uint32_t max_new);
 bool plot_fetch_until_full(struct plot *p);
-bool plot_plot(struct plot *plot);
+bool plot_plot(struct plot *plot, char *buf, uint32_t buflen);
 #endif

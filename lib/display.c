@@ -2,11 +2,46 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "internal/display.h"
+#include "internal/log.h"
 #include "plot/plot.h"
+
+struct buf {
+	char *buf;
+	uint32_t bufi;
+	uint32_t buflen;
+};
+
+static void
+bufprintf(struct buf *buf, const char *fmt, ...)
+{
+	if (buf->bufi >= buf->buflen) {
+		L("buffer full, dropping '%s'", fmt);
+		return;
+	}
+
+	va_list ap;
+	va_start(ap, fmt);
+	buf->bufi += vsnprintf(&buf->buf[buf->bufi], buf->buflen - buf->bufi, fmt, ap);
+	va_end(ap);
+}
+
+static void
+bufputc(struct buf *buf, char c)
+{
+	if (buf->bufi >= buf->buflen) {
+		L("buffer full, dropping '%c'", c);
+		return;
+	}
+
+	buf->buf[buf->bufi] = c;
+	++buf->bufi;
+}
 
 /* A piece can be defined by the four sides it touches of the cell it contains.
  * The convention used is that the South side is the starting point, and you go
@@ -166,7 +201,7 @@ plot_fill_canvas(struct plot *plot)
 #define FMT_BUF_LEN 64
 
 static void
-plot_print_y_label(struct plot *p, uint8_t e, double l, enum plot_label_side side)
+plot_print_y_label(struct plot *p, struct buf *buf, uint8_t e, double l, enum plot_label_side side)
 {
 	enum plot_piece pp, e_piece = e & 0xf;
 	enum plot_color e_color = e >> 4;
@@ -182,33 +217,33 @@ plot_print_y_label(struct plot *p, uint8_t e, double l, enum plot_label_side sid
 
 	if (side == plot_label_side_left) {
 		if (p->flags & plot_flag_color) {
-			printf("\033[0m");
+			bufprintf(buf, "\033[0m");
 		}
 
 		snprintf(fmt, FMT_BUF_LEN, "%%%d.%df ", p->y_label.width, p->y_label.prec);
-		printf(fmt, l);
+		bufprintf(buf, fmt, l);
 	}
 
 	if (pp == PPCross && e_color > 0) {
-		printf("\033[%dm", color_to_ansi_escape_color(e_color));
+		bufprintf(buf, "\033[%dm", color_to_ansi_escape_color(e_color));
 	} else if (p->flags & plot_flag_color) {
-		printf("\033[0m");
+		bufprintf(buf, "\033[0m");
 	}
 
-	printf("%s", p->charset[pp]);
+	bufprintf(buf, "%s", p->charset[pp]);
 
 	if (side == plot_label_side_right) {
 		if (p->flags & plot_flag_color) {
-			printf("\033[0m");
+			bufprintf(buf, "\033[0m");
 		}
 
 		snprintf(fmt, FMT_BUF_LEN, " %%-%d.%df", p->y_label.prec, p->y_label.width);
-		printf(fmt, l);
+		bufprintf(buf, fmt, l);
 	}
 }
 
 static void
-plot_print_canvas(struct plot *plot)
+plot_print_canvas(struct plot *plot, struct buf *buf)
 {
 	long x, y;
 	enum plot_color color;
@@ -218,42 +253,41 @@ plot_print_canvas(struct plot *plot)
 
 	for (y = plot->height - 1; y >= 0; y--) {
 		if (plot->y_label.side & plot_label_side_left) {
-			plot_print_y_label(plot, *canvas_get(plot, 0, y), label_num, 1);
+			plot_print_y_label(plot, buf, *canvas_get(plot, 0, y), label_num, 1);
 		}
 
 		for (x = 0; x < (long)plot->width; x++) {
 			color = color_get(plot, x, y);
 			if (color) {
-				printf("\033[%dm", color_to_ansi_escape_color(color));
+				bufprintf(buf, "\033[%dm", color_to_ansi_escape_color(color));
 			}
 
-			printf("%s", plot->charset[piece_get(plot, x, y)]);
+			bufprintf(buf, "%s", plot->charset[piece_get(plot, x, y)]);
 
 			if (color) {
-				printf("\033[0m");
+				bufprintf(buf, "\033[0m");
 			}
 		}
 
 		if (plot->y_label.side & plot_label_side_right) {
-			plot_print_y_label(plot, *canvas_get(plot, plot->width - 1, y), label_num, 2);
+			plot_print_y_label(plot, buf, *canvas_get(plot, plot->width - 1, y), label_num, 2);
 		}
 
-		printf("\n");
+		bufputc(buf, '\n');
 
 		label_num -= inc;
 	}
 
 	if (plot->flags & plot_flag_color) {
-		printf("\033[0m");
+		bufprintf(buf, "\033[0m");
 	}
 }
 
 static void
-plot_print_x_label(struct plot *p, char *buf, uint32_t buflen)
+plot_print_x_label(struct plot *p, struct buf *buf)
 {
 	long end, tmp, i;
 	int every, start;
-	size_t printed = 0;
 	char fmt[FMT_BUF_LEN + 1];
 
 	if (p->x_label.every <= 0) {
@@ -286,7 +320,7 @@ plot_print_x_label(struct plot *p, char *buf, uint32_t buflen)
 	}
 
 	for (i = 0; i < end; i++) {
-		buf[printed++] = ' ';
+		bufputc(buf, ' ');
 	}
 
 	end = start + p->width;
@@ -296,38 +330,32 @@ plot_print_x_label(struct plot *p, char *buf, uint32_t buflen)
 		/* tmp *= p->average; */
 
 		if (tmp == 0 && p->x_label.color) {
-			printed += snprintf(&buf[printed], buflen - printed,
-				fmt, color_to_ansi_escape_color(p->x_label.color), tmp);
+			bufprintf(buf, fmt, color_to_ansi_escape_color(p->x_label.color), tmp);
 		} else {
-			printed += snprintf(&buf[printed], buflen - printed,
-				fmt, tmp);
+			bufprintf(buf, fmt, tmp);
 		}
 	}
 
-	if (printed < buflen) {
-		buf[printed] = '\n';
-	}
+	bufputc(buf, '\n');
 }
 
 void
-plot_display(struct plot *plot)
+plot_render(struct plot *plot, char *bufmem, uint32_t buflen)
 {
-	char x_label[256] = { 0 };
-	if (plot->x_label.side && plot->x_label.every) {
-		plot_print_x_label(plot, x_label, 256);
-	}
+	struct buf buf = { .buf = bufmem, .buflen = buflen };
 
-	/* create the graph */
-	plot_fill_canvas(plot);
+	assert(buflen);
 
 	if (plot->x_label.side & plot_label_side_top) {
-		printf("%s", x_label);
+		plot_print_x_label(plot, &buf);
 	}
 
-	/* print the graph with labels */
-	plot_print_canvas(plot);
+	plot_fill_canvas(plot);
+	plot_print_canvas(plot, &buf);
 
 	if (plot->x_label.side & plot_label_side_bottom) {
-		printf("%s", x_label);
+		plot_print_x_label(plot, &buf);
 	}
+
+	bufputc(&buf, 0);
 }
