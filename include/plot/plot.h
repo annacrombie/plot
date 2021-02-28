@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #define PLOT_DBUF_SIZE 128
 #define PLOT_PIPELINE_CTX_SIZE 32
@@ -122,8 +121,11 @@ extern const struct plot_version plot_version;
 
 void plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
 	struct plot_data *pd, uint32_t height, uint32_t width, uint32_t datasets);
+struct plot *plot_alloc(uint32_t height, uint32_t width, uint32_t depth);
+void plot_free(struct plot *p);
+
 void plot_set_charset(struct plot *plot, enum plot_charset charset);
-void plot_set_custom_charset(struct plot *plot, char *str, size_t len);
+void plot_set_custom_charset(struct plot *plot, char *str, uint32_t len);
 void plot_dataset_init(struct plot_data *pd, enum plot_color color,
 	struct plot_pipeline_elem *ple, uint32_t ple_max,
 	plot_input_func input_func, void *input_ctx);

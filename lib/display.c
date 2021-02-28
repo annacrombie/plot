@@ -21,7 +21,6 @@ static void
 bufprintf(struct buf *buf, const char *fmt, ...)
 {
 	if (buf->bufi >= buf->buflen) {
-		L("buffer full, dropping '%s'", fmt);
 		return;
 	}
 
@@ -35,7 +34,6 @@ static void
 bufputc(struct buf *buf, char c)
 {
 	if (buf->bufi >= buf->buflen) {
-		L("buffer full, dropping '%c'", c);
 		return;
 	}
 
