@@ -49,6 +49,7 @@ install_headers()
 subdir('include')
 subdir('lib')
 subdir('cli')
+subdir('examples')
 
 if get_option('test')
 	subdir('tests')
