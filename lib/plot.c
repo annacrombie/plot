@@ -147,7 +147,7 @@ set_auto_bounds(struct plot *p)
 }
 
 bool
-plot_plot(struct plot *plot)
+plot_plot(struct plot *plot, char *buf, uint32_t buflen)
 {
 	size_t i;
 	int no_data = 1;
@@ -167,7 +167,8 @@ plot_plot(struct plot *plot)
 		set_auto_bounds(plot);
 	}
 
-	plot_display(plot);
+	plot_debug_logfile = stderr;
+	plot_render(plot, buf, buflen);
 
 	return true;
 }
