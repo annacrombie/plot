@@ -24,10 +24,8 @@ bufputs(struct buf *buf, const char *s)
 	if (buf->file) {
 		fputs(s, buf->file);
 	} else {
-		uint32_t len = strlen(s);
-		if (buf->bufi + len < buf->buflen) {
-			memcpy(&buf->buf[buf->bufi], s, len);
-			buf->bufi += len;
+		for (; buf->bufi < buf->buflen && *s; ++s, ++buf->bufi) {
+			buf->buf[buf->bufi] = *s;
 		}
 	}
 }
@@ -162,11 +160,11 @@ next_piece(long y, long cur, long next)
 
 	if (y == cur) {
 		i = next > cur ? PPRightUp : next < cur ? PPRightDown : PPHoriz;
-	}else if (y == next) {
+	} else if (y == next) {
 		i = next > cur ? PPUpRight : next < cur ? PPDownRight : PPHoriz;
-	}else if ((y > cur && y < next) || (y < cur && y > next)) {
+	} else if ((y > cur && y < next) || (y < cur && y > next)) {
 		i = PPVert;
-	}else {
+	} else {
 		i = PPBlank;
 	}
 
@@ -178,7 +176,7 @@ plot_fill_canvas(struct plot *plot)
 {
 	size_t i, x, y;
 	double ratio, *data;
-	long cur, nxt;
+	uint32_t cur, nxt, e;
 	enum plot_piece next_p;
 
 	memset(plot->canvas, 0, plot->height * plot->width);
@@ -201,10 +199,17 @@ plot_fill_canvas(struct plot *plot)
 				nxt = lround((data[x + 1] - plot->bounds.min) * ratio);
 			}
 
-			for (y = 0; y < plot->height; y++) {
-				if ((next_p = next_piece(y, cur, nxt)) == PPBlank) {
-					continue;
-				}
+			if (cur > nxt) {
+				y = nxt;
+				e = cur;
+			} else {
+				y = cur;
+				e = nxt;
+			}
+
+			for (; y <= e; y++) {
+				next_p = next_piece(y, cur, nxt);
+				assert(next_p != PPBlank);
 
 				if (plot->flags & plot_flag_merge_plot_pieces) {
 					next_p |= piece_get(plot, x, y);
@@ -220,76 +225,84 @@ plot_fill_canvas(struct plot *plot)
 #define FMT_BUF_LEN 64
 
 static void
-plot_print_y_label(struct plot *p, struct buf *buf, uint8_t e, double l, enum plot_label_side side)
-{
-	enum plot_piece pp, e_piece = e & 0xf;
-	enum plot_color e_color = e >> 4;
-	char fmt[FMT_BUF_LEN + 1];
-
-	/* plot_y_label_init_fmts(&p->y_label, side); */
-
-	if (side == plot_label_side_left) {
-		pp = PPTLeft | ((e_piece & 0x8) >> 2);
-	} else {
-		pp = PPTRight | e_piece;
-	}
-
-	if (side == plot_label_side_left) {
-		if (p->flags & plot_flag_color) {
-			bufputs(buf, "\033[0m");
-		}
-
-		snprintf(fmt, FMT_BUF_LEN, "%%%d.%df ", p->y_label.width, p->y_label.prec);
-		bufprintf(buf, fmt, l);
-	}
-
-	if (pp == PPCross && e_color > 0) {
-		bufputs(buf, color_to_ansi_escape(e_color));
-	} else if (p->flags & plot_flag_color) {
-		bufputs(buf, "\033[0m");
-	}
-
-	bufprintf(buf, "%s", p->charset[pp]);
-
-	if (side == plot_label_side_right) {
-		if (p->flags & plot_flag_color) {
-			bufputs(buf, "\033[0m");
-		}
-
-		snprintf(fmt, FMT_BUF_LEN, " %%-%d.%df", p->y_label.prec, p->y_label.width);
-		bufprintf(buf, fmt, l);
-	}
-}
-
-static void
 plot_print_canvas(struct plot *plot, struct buf *buf)
 {
 	long x, y;
-	enum plot_color color;
+	enum plot_color color, last_color;
+	uint8_t piece;
 	const double inc = (plot->bounds.max - plot->bounds.min)
 			   / (double)(plot->height - 1);
 	double label_num = plot->bounds.max;
+	bool have_last_color = false;
+
+	char y_fmt_l[FMT_BUF_LEN + 1];
+	if (plot->y_label.side & plot_label_side_left) {
+		snprintf(y_fmt_l, FMT_BUF_LEN, "%%%d.%df ",
+			plot->y_label.width, plot->y_label.prec);
+	}
+
+	char y_fmt_r[FMT_BUF_LEN + 1];
+	if (plot->y_label.side & plot_label_side_right) {
+		snprintf(y_fmt_r, FMT_BUF_LEN, " %%-%d.%df",
+			plot->y_label.width, plot->y_label.prec);
+	}
 
 	for (y = plot->height - 1; y >= 0; y--) {
+		/* y label left */
 		if (plot->y_label.side & plot_label_side_left) {
-			plot_print_y_label(plot, buf, *canvas_get(plot, 0, y), label_num, 1);
+			color = color_get(plot, 0, y);
+			piece = piece_get(plot, 0, y);
+			piece = PPTLeft | ((piece & 0x8) >> 2);
+
+			if (have_last_color) {
+				bufputs(buf, "\033[0m");
+				have_last_color = false;
+			}
+
+			bufprintf(buf, y_fmt_l, label_num);
+			if (piece == PPCross && color) {
+				bufputs(buf, color_to_ansi_escape(color));
+				have_last_color = true;
+				last_color = color;
+			}
+
+			bufputs(buf, plot->charset[piece]);
 		}
 
+		/* canvas */
 		for (x = 0; x < (long)plot->width; x++) {
 			color = color_get(plot, x, y);
+			piece = piece_get(plot, x, y);
+
 			if (color) {
+				if (!have_last_color || color != last_color) {
+					bufputs(buf, color_to_ansi_escape(color));
+					have_last_color = true;
+					last_color = color;
+				}
+			} else if (have_last_color) {
+				bufputs(buf, "\033[0m");
+				have_last_color = false;
+			}
+
+			bufputs(buf, plot->charset[piece]);
+		}
+
+		/* y label right */
+		if (plot->y_label.side & plot_label_side_right) {
+			piece = PPTRight | piece;
+
+			if (piece == PPCross && color) {
 				bufputs(buf, color_to_ansi_escape(color));
 			}
 
-			bufputs(buf, plot->charset[piece_get(plot, x, y)]);
+			bufputs(buf, plot->charset[piece]);
 
 			if (color) {
 				bufputs(buf, "\033[0m");
 			}
-		}
 
-		if (plot->y_label.side & plot_label_side_right) {
-			plot_print_y_label(plot, buf, *canvas_get(plot, plot->width - 1, y), label_num, 2);
+			bufprintf(buf, y_fmt_r, label_num);
 		}
 
 		bufputc(buf, '\n');
