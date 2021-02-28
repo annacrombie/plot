@@ -19,6 +19,20 @@ struct buf {
 };
 
 static void
+bufputs(struct buf *buf, const char *s)
+{
+	if (buf->file) {
+		fputs(s, buf->file);
+	} else {
+		uint32_t len = strlen(s);
+		if (buf->bufi + len < buf->buflen) {
+			memcpy(&buf->buf[buf->bufi], s, len);
+			buf->bufi += len;
+		}
+	}
+}
+
+static void
 bufprintf(struct buf *buf, const char *fmt, ...)
 {
 	va_list ap;
@@ -27,12 +41,11 @@ bufprintf(struct buf *buf, const char *fmt, ...)
 	if (buf->file) {
 		vfprintf(buf->file, fmt, ap);
 	} else {
-		if (buf->bufi >= buf->buflen) {
-			return;
+		if (buf->bufi < buf->buflen) {
+			buf->bufi += vsnprintf(&buf->buf[buf->bufi], buf->buflen - buf->bufi, fmt, ap);
 		}
-
-		buf->bufi += vsnprintf(&buf->buf[buf->bufi], buf->buflen - buf->bufi, fmt, ap);
 	}
+
 	va_end(ap);
 }
 
@@ -42,12 +55,10 @@ bufputc(struct buf *buf, char c)
 	if (buf->file) {
 		fputc(c, buf->file);
 	} else {
-		if (buf->bufi >= buf->buflen) {
-			return;
+		if (buf->bufi < buf->buflen) {
+			buf->buf[buf->bufi] = c;
+			++buf->bufi;
 		}
-
-		buf->buf[buf->bufi] = c;
-		++buf->bufi;
 	}
 }
 
@@ -106,27 +117,27 @@ piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
 	*cv = (*cv & 0xf0) | pp;
 }
 
-static uint8_t
-color_to_ansi_escape_color(enum plot_color color)
+static const char *
+color_to_ansi_escape(enum plot_color color)
 {
 	switch (color) {
-	case plot_color_black:     return 30;
-	case plot_color_red:       return 31;
-	case plot_color_green:     return 32;
-	case plot_color_yellow:    return 33;
-	case plot_color_blue:      return 34;
-	case plot_color_magenta:   return 35;
-	case plot_color_cyan:      return 36;
-	case plot_color_white:     return 37;
-	case plot_color_brblack:   return 90;
-	case plot_color_brred:     return 91;
-	case plot_color_brgreen:   return 92;
-	case plot_color_bryellow:  return 93;
-	case plot_color_brblue:    return 94;
-	case plot_color_brmagenta: return 95;
-	case plot_color_brcyan:    return 96;
-	case plot_color_brwhite:   return 97;
-	default: assert(false); return 0;
+	case plot_color_black:     return "\033[30m";
+	case plot_color_red:       return "\033[31m";
+	case plot_color_green:     return "\033[32m";
+	case plot_color_yellow:    return "\033[33m";
+	case plot_color_blue:      return "\033[34m";
+	case plot_color_magenta:   return "\033[35m";
+	case plot_color_cyan:      return "\033[36m";
+	case plot_color_white:     return "\033[37m";
+	case plot_color_brblack:   return "\033[90m";
+	case plot_color_brred:     return "\033[91m";
+	case plot_color_brgreen:   return "\033[92m";
+	case plot_color_bryellow:  return "\033[93m";
+	case plot_color_brblue:    return "\033[94m";
+	case plot_color_brmagenta: return "\033[95m";
+	case plot_color_brcyan:    return "\033[96m";
+	case plot_color_brwhite:   return "\033[97m";
+	default: assert(false); return "";
 	}
 }
 
@@ -225,7 +236,7 @@ plot_print_y_label(struct plot *p, struct buf *buf, uint8_t e, double l, enum pl
 
 	if (side == plot_label_side_left) {
 		if (p->flags & plot_flag_color) {
-			bufprintf(buf, "\033[0m");
+			bufputs(buf, "\033[0m");
 		}
 
 		snprintf(fmt, FMT_BUF_LEN, "%%%d.%df ", p->y_label.width, p->y_label.prec);
@@ -233,16 +244,16 @@ plot_print_y_label(struct plot *p, struct buf *buf, uint8_t e, double l, enum pl
 	}
 
 	if (pp == PPCross && e_color > 0) {
-		bufprintf(buf, "\033[%dm", color_to_ansi_escape_color(e_color));
+		bufputs(buf, color_to_ansi_escape(e_color));
 	} else if (p->flags & plot_flag_color) {
-		bufprintf(buf, "\033[0m");
+		bufputs(buf, "\033[0m");
 	}
 
 	bufprintf(buf, "%s", p->charset[pp]);
 
 	if (side == plot_label_side_right) {
 		if (p->flags & plot_flag_color) {
-			bufprintf(buf, "\033[0m");
+			bufputs(buf, "\033[0m");
 		}
 
 		snprintf(fmt, FMT_BUF_LEN, " %%-%d.%df", p->y_label.prec, p->y_label.width);
@@ -267,13 +278,13 @@ plot_print_canvas(struct plot *plot, struct buf *buf)
 		for (x = 0; x < (long)plot->width; x++) {
 			color = color_get(plot, x, y);
 			if (color) {
-				bufprintf(buf, "\033[%dm", color_to_ansi_escape_color(color));
+				bufputs(buf, color_to_ansi_escape(color));
 			}
 
-			bufprintf(buf, "%s", plot->charset[piece_get(plot, x, y)]);
+			bufputs(buf, plot->charset[piece_get(plot, x, y)]);
 
 			if (color) {
-				bufprintf(buf, "\033[0m");
+				bufputs(buf, "\033[0m");
 			}
 		}
 
@@ -310,7 +321,7 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 	start = p->x_label.start;
 
 	if (p->x_label.color) {
-		snprintf(fmt, FMT_BUF_LEN, "\033[%%dm%%-%dld\033[0m", every);
+		snprintf(fmt, FMT_BUF_LEN, "%%s@%%-%dld\033[0m", every);
 	} else {
 		snprintf(fmt, FMT_BUF_LEN, "%%-%dld", every);
 	}
@@ -338,7 +349,7 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 		/* tmp *= p->average; */
 
 		if (tmp == 0 && p->x_label.color) {
-			bufprintf(buf, fmt, color_to_ansi_escape_color(p->x_label.color), tmp);
+			bufprintf(buf, fmt, color_to_ansi_escape(p->x_label.color), tmp);
 		} else {
 			bufprintf(buf, fmt, tmp);
 		}
