@@ -320,7 +320,7 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 {
 	long end, tmp, i;
 	int every, start;
-	char fmt[FMT_BUF_LEN + 1];
+	char fmt[FMT_BUF_LEN + 1], clrfmt[FMT_BUF_LEN + 1];
 
 	if (p->x_label.every <= 0) {
 		return;
@@ -333,10 +333,10 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 
 	start = p->x_label.start;
 
+	snprintf(fmt, FMT_BUF_LEN, "%%-%dld", every);
+
 	if (p->x_label.color) {
-		snprintf(fmt, FMT_BUF_LEN, "%%s@%%-%dld\033[0m", every);
-	} else {
-		snprintf(fmt, FMT_BUF_LEN, "%%-%dld", every);
+		snprintf(clrfmt, FMT_BUF_LEN, "%%s%%-%dld\033[0m", every);
 	}
 
 	if (start % every > 0) {
@@ -359,10 +359,9 @@ plot_print_x_label(struct plot *p, struct buf *buf)
 	for (i = start + tmp; i < end; i += every) {
 		tmp = i < 0 ? -1 : 1;
 		tmp = p->x_label.mod > 0 ? tmp * (i % p->x_label.mod) : i;
-		/* tmp *= p->average; */
 
 		if (tmp == 0 && p->x_label.color) {
-			bufprintf(buf, fmt, color_to_ansi_escape(p->x_label.color), tmp);
+			bufprintf(buf, clrfmt, color_to_ansi_escape(p->x_label.color), tmp);
 		} else {
 			bufprintf(buf, fmt, tmp);
 		}
