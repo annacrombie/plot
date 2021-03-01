@@ -228,8 +228,8 @@ static void
 plot_print_canvas(struct plot *plot, struct buf *buf)
 {
 	long x, y;
-	enum plot_color color, last_color;
-	uint8_t piece;
+	enum plot_color color = 0, last_color = 0;
+	uint8_t piece = 0;
 	const double inc = (plot->bounds.max - plot->bounds.min)
 			   / (double)(plot->height - 1);
 	double label_num = plot->bounds.max;
