@@ -207,7 +207,7 @@ set_fixed_plot_bounds(char *s, struct plot *p)
 	    && parse_next_double(&s, &max)) {
 		plot_fix_bounds(p, min, max);
 	} else {
-		fprintf(stderr, "invalid bounds '%s'", s);
+		fprintf(stderr, "invalid bounds");
 		exit(EXIT_FAILURE);
 	}
 }
