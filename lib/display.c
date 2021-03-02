@@ -60,6 +60,31 @@ bufputc(struct buf *buf, char c)
 	}
 }
 
+static const char *
+color_to_ansi_escape(enum plot_color color)
+{
+	switch (color) {
+	case plot_color_black:     return "\033[30m";
+	case plot_color_red:       return "\033[31m";
+	case plot_color_green:     return "\033[32m";
+	case plot_color_yellow:    return "\033[33m";
+	case plot_color_blue:      return "\033[34m";
+	case plot_color_magenta:   return "\033[35m";
+	case plot_color_cyan:      return "\033[36m";
+	case plot_color_white:     return "\033[37m";
+	case plot_color_brblack:   return "\033[90m";
+	case plot_color_brred:     return "\033[91m";
+	case plot_color_brgreen:   return "\033[92m";
+	case plot_color_bryellow:  return "\033[93m";
+	case plot_color_brblue:    return "\033[94m";
+	case plot_color_brmagenta: return "\033[95m";
+	case plot_color_brcyan:    return "\033[96m";
+	case plot_color_brwhite:   return "\033[97m";
+	default: assert(false); return "";
+	}
+}
+
+
 /* A piece can be defined by the four sides it touches of the cell it contains.
  * The convention used is that the South side is the starting point, and you go
  * counter-clockwise.  So the piece pointing South and North (│) is represented
@@ -113,30 +138,6 @@ piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
 {
 	uint8_t *cv = canvas_get(p, x, y);
 	*cv = (*cv & 0xf0) | pp;
-}
-
-static const char *
-color_to_ansi_escape(enum plot_color color)
-{
-	switch (color) {
-	case plot_color_black:     return "\033[30m";
-	case plot_color_red:       return "\033[31m";
-	case plot_color_green:     return "\033[32m";
-	case plot_color_yellow:    return "\033[33m";
-	case plot_color_blue:      return "\033[34m";
-	case plot_color_magenta:   return "\033[35m";
-	case plot_color_cyan:      return "\033[36m";
-	case plot_color_white:     return "\033[37m";
-	case plot_color_brblack:   return "\033[90m";
-	case plot_color_brred:     return "\033[91m";
-	case plot_color_brgreen:   return "\033[92m";
-	case plot_color_bryellow:  return "\033[93m";
-	case plot_color_brblue:    return "\033[94m";
-	case plot_color_brmagenta: return "\033[95m";
-	case plot_color_brcyan:    return "\033[96m";
-	case plot_color_brwhite:   return "\033[97m";
-	default: assert(false); return "";
-	}
 }
 
 static uint8_t
