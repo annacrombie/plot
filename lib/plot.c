@@ -53,7 +53,6 @@ plot_init(struct plot *plot, uint8_t *canvas, double *data_buf,
 		.height = height,
 		.width = width,
 		.depth = depth,
-		.follow_rate = 100,
 	};
 
 	plot_set_charset(plot, plot_charset_unicode);

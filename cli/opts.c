@@ -400,13 +400,18 @@ set_charset(struct plot *p, char *charset)
 }
 
 void
-parse_opts(struct plot *p, int argc, char **argv)
+parse_opts(struct opts *opts, struct plot *p, int argc, char **argv)
 {
 	char opt;
 	enum plot_color lc = 0;
 	long tmp;
 	uint32_t i;
 	enum plot_file_input_flags global_flags = 0;
+
+	*opts = (struct opts){
+		.mode = mode_normal,
+		.follow_rate = 100,
+	};
 
 	struct plot_data *pd = &default_dataset;
 	plot_dataset_init(pd, 0, default_pipeline, MAX_PIPELINE_ELEMENTS, NULL, NULL);
@@ -429,7 +434,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			}
 			break;
 		case 'A':
-			p->flags |= plot_flag_animate;
+			opts->mode = mode_animate;
 			break;
 		case 'b':
 			set_fixed_plot_bounds(optarg, p);
@@ -439,7 +444,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			break;
 		case 'f':
 			global_flags |= plot_file_input_flag_infinite;
-			p->flags |= plot_flag_follow;
+			opts->mode = mode_follow;
 			break;
 		case 'i':
 			pd = add_input(optarg, p, lc);
@@ -455,7 +460,7 @@ parse_opts(struct plot *p, int argc, char **argv)
 			set_charset(p, optarg);
 			break;
 		case 'S':
-			p->follow_rate = strtol(optarg, NULL, 10);
+			opts->follow_rate = strtol(optarg, NULL, 10);
 			break;
 		case 'x':
 			set_x_label(optarg, p);
