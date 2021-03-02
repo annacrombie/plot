@@ -33,18 +33,21 @@ main(int argc, char **argv)
 
 	plot_init(&p, canvas, data_buf, pd, 24, 80, MAX_DATASETS);
 
-	parse_opts(&p, argc, argv);
+	struct opts opts = { 0 };
+	parse_opts(&opts, &p, argc, argv);
 
-	if (p.flags & plot_flag_animate) {
-		animate_plot(&p, buf, BUFSIZE, p.follow_rate, animate_cb);
-	} else if (p.flags & plot_flag_follow) {
-		animate_plot(&p, buf, BUFSIZE, p.follow_rate, follow_cb);
-	} else {
+	switch (opts.mode) {
+	case mode_normal:
 		plot_fetch_until_full(&p);
 		plot_string(&p, buf, BUFSIZE);
 		fputs(buf, stdout);
 		fflush(stdout);
+		break;
+	case mode_animate:
+		animate_plot(&p, buf, BUFSIZE, opts.follow_rate, animate_cb);
+		break;
+	case mode_follow:
+		animate_plot(&p, buf, BUFSIZE, opts.follow_rate, follow_cb);
+		break;
 	}
-
-	return 0;
 }

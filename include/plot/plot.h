@@ -43,11 +43,9 @@ enum plot_label_side {
 };
 
 enum plot_flags {
-	plot_flag_animate           = 1 << 0,
-	plot_flag_follow            = 1 << 1,
-	plot_flag_color             = 1 << 2,
-	plot_flag_merge_plot_pieces = 1 << 3,
-	plot_flag_fixed_bounds      = 1 << 4,
+	plot_flag_color             = 1 << 0,
+	plot_flag_merge_plot_pieces = 1 << 1,
+	plot_flag_fixed_bounds      = 1 << 2,
 };
 
 enum plot_data_proc_type {
@@ -110,7 +108,6 @@ struct plot {
 	} y_label;
 	uint32_t height, width, depth;
 	uint32_t datasets;
-	uint32_t follow_rate; // TODO
 	uint32_t flags;
 };
 
