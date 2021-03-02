@@ -133,13 +133,6 @@ piece_get(struct plot *p, uint16_t x, uint16_t y)
 	return *canvas_get(p, x, y) & 0xf;
 }
 
-static void
-piece_set(struct plot *p, uint16_t x, uint16_t y, enum plot_piece pp)
-{
-	uint8_t *cv = canvas_get(p, x, y);
-	*cv = (*cv & 0xf0) | pp;
-}
-
 static uint8_t
 color_get(struct plot *p, uint16_t x, uint16_t y)
 {
@@ -148,10 +141,15 @@ color_get(struct plot *p, uint16_t x, uint16_t y)
 }
 
 static void
-color_set(struct plot *p, uint16_t x, uint16_t y, enum plot_color c)
+canvas_set(struct plot *p, uint8_t piece, enum plot_color color, uint32_t x, uint32_t y)
 {
 	uint8_t *cv = canvas_get(p, x, y);
-	*cv = c << 4 | (*cv & 0xf);
+
+	if (p->flags & plot_flag_merge_plot_pieces) {
+		piece |= *cv & 0xf;
+	}
+
+	*cv = (color << 4) | piece;
 }
 
 static enum plot_piece
@@ -212,12 +210,7 @@ plot_fill_canvas(struct plot *plot)
 				next_p = next_piece(y, cur, nxt);
 				assert(next_p != PPBlank);
 
-				if (plot->flags & plot_flag_merge_plot_pieces) {
-					next_p |= piece_get(plot, x, y);
-				}
-
-				color_set(plot, x, y, plot->data[i].color);
-				piece_set(plot, x, y, next_p);
+				canvas_set(plot, next_p, plot->data[i].color, x, y);
 			}
 		}
 	}
