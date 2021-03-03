@@ -55,31 +55,25 @@ static void
 sma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
 	struct sma_proc_ctx *ctx = _ctx;
+	uint32_t tmpi;
 
-	/* output zeroes until we have enough data to make sure everything
-	 * lines up*/
-	while (ctx->leading < ctx->n / 2) {
-		++ctx->leading;
+	for (tmpi = 0; ctx->sumlen < ctx->n && tmpi < in->len; ++tmpi, ++ctx->sumlen) {
+		ctx->sum += in->dat[tmpi];
 
-		out->dat[out->len] = 0;
+		if (ctx->sumlen >= ctx->n / 2) {
+			out->dat[out->len] = ctx->sum / (double)ctx->sumlen;
 
-		if (++out->len > PLOT_DBUF_SIZE) {
-			return;
+			if (++out->len > PLOT_DBUF_SIZE) {
+				return;
+			}
 		}
 	}
 
-	uint32_t i;
-	double sum;
-
 	for (; in->i + ctx->n < in->len; ++in->i) {
+		ctx->sum -= in->dat[in->i];
+		ctx->sum += in->dat[in->i + ctx->n];
 
-		sum = 0.0;
-
-		for (i = 0; i < ctx->n; ++i) {
-			sum += in->dat[in->i + i];
-		}
-
-		out->dat[out->len] = sum / (double)ctx->n;
+		out->dat[out->len] = ctx->sum / (double)ctx->n;
 
 		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
