@@ -6,6 +6,8 @@
 
 #include "plot/plot.h"
 
+typedef bool ((*plot_data_proc_init))(void *proc_ctx, void *opts, uint32_t opts_size);
+
 struct dproc_registry_elem {
 	plot_data_proc_proc proc;
 	plot_data_proc_init init;

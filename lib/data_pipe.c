@@ -16,14 +16,15 @@ plot_pipeline_append(struct plot_data *pd, enum plot_data_proc_type proc, void *
 
 	if (pd->pipeline_len >= pd->pipeline_max) {
 		return false;
-	} else if (dproc_registry[proc].init &&
-		   !dproc_registry[proc].init(ctx, ctx_size)) {
-		return false;
 	}
 
 	struct plot_pipeline_elem *pe = &pd->pipe[pd->pipeline_len];
 
-	memcpy(pe->ctx, ctx, ctx_size);
+	if (dproc_registry[proc].init &&
+	    !dproc_registry[proc].init(pe->ctx, ctx, ctx_size)) {
+		return false;
+	}
+
 	pe->proc = dproc_registry[proc].proc;
 
 	++pd->pipeline_len;
