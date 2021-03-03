@@ -60,7 +60,6 @@ struct plot_dbuf;
 
 typedef uint32_t ((*plot_input_func)(void *ctx, double *out, uint32_t out_max));
 typedef void ((*plot_data_proc_proc))(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx);
-typedef bool ((*plot_data_proc_init))(void *ctx, uint32_t size);
 
 struct plot_dbuf {
 	double dat[PLOT_DBUF_SIZE];

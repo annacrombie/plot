@@ -8,17 +8,17 @@
 static void
 avg_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx)
 {
-	uint32_t i, n = *(uint32_t *)ctx;
+	uint32_t i, *n = ctx;
 	double sum;
 
-	for (; in->i + n < in->len; in->i += n) {
+	for (; in->i + *n < in->len; in->i += *n) {
 		sum = 0.0;
 
-		for (i = 0; i < n; ++i) {
+		for (i = 0; i < *n; ++i) {
 			sum += in->dat[in->i + i];
 		}
 
-		out->dat[out->len] = sum / (double)n;
+		out->dat[out->len] = sum / (double)*n;
 
 		if (++out->len > PLOT_DBUF_SIZE) {
 			break;
@@ -27,27 +27,34 @@ avg_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *ctx)
 }
 
 static bool
-avg_init(void *ctx, uint32_t size)
+avg_init(void *proc_ctx, void *opts, uint32_t opts_size)
 {
-	assert(size == sizeof(uint32_t));
+	assert(opts_size == sizeof(uint32_t));
 
-	uint32_t n = *(uint32_t *)ctx;
+	uint32_t *n = opts, *proc_n = proc_ctx;
 
-	if (n == 0 || n >= PLOT_DBUF_SIZE) {
-		fprintf(stderr, "invalid argument: %d\n", n);
+	if (*n == 0 || *n >= PLOT_DBUF_SIZE) {
+		fprintf(stderr, "invalid argument: %d\n", *n);
 		return false;
-	} else {
-		return true;
 	}
+
+	*proc_n = *n;
+	return true;
 }
+
+/*
+ * this struct (and all pipeline ctx structs must be <= PLOT_PIPLEINE_CTX_SIZE
+ */
+struct sma_proc_ctx {
+	uint32_t n;
+	uint32_t sumlen;
+	double sum;
+};
 
 static void
 sma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
-	struct {
-		uint32_t n;
-		uint32_t leading;
-	} *ctx = _ctx;
+	struct sma_proc_ctx *ctx = _ctx;
 
 	/* output zeroes until we have enough data to make sure everything
 	 * lines up*/
@@ -81,21 +88,24 @@ sma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 }
 
 static bool
-sma_init(void *ctx, uint32_t size)
+sma_init(void *proc_ctx, void *opts, uint32_t opts_size)
 {
-	assert(size == sizeof(uint32_t));
+	assert(opts_size == sizeof(uint32_t));
 
-	uint32_t n = *(uint32_t *)ctx;
+	uint32_t *n = opts;
+	struct sma_proc_ctx *ctx = proc_ctx;
 
-	if (n == 0 || n >= PLOT_DBUF_SIZE) {
-		fprintf(stderr, "invalid argument: %d\n", n);
+	if (*n == 0 || *n >= PLOT_DBUF_SIZE) {
+		fprintf(stderr, "invalid argument: %d\n", *n);
 		return false;
-	} else if (!(n & 1)) {
+	} else if (!(*n & 1)) {
 		fprintf(stderr, "sma argument must be odd\n");
 		return false;
-	} else {
-		return true;
 	}
+
+	ctx->n = *n;
+
+	return true;
 }
 
 static void
@@ -144,10 +154,10 @@ roc_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 }
 
 static bool
-roc_init(void *ctx, uint32_t size)
+roc_init(void *proc_ctx, void *opts, uint32_t opts_size)
 {
-	assert(size == sizeof(float));
-	if (*(float *)ctx == 0.0f) {
+	assert(opts_size == sizeof(float));
+	if (*(float *)opts == 0.0f) {
 		fprintf(stderr, "argument cannot be 0\n");
 		return false;
 	} else {
