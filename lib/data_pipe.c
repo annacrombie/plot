@@ -57,13 +57,15 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 	if (max_new == 0 || in->len - in->i < max_new) {
 		in = &pd->in.out;
 
-		if (!(pd->in.out.len = pd->in.read(pd->in.ctx, pd->in.out.dat, PLOT_DBUF_SIZE))) {
+		new = pd->in.read(pd->in.ctx, &in->dat[in->len], PLOT_DBUF_SIZE - in->len);
+
+		if (!new) {
 			/* no input */
 			return false;
 		}
+		in->len += new;
 
 		for (i = 0; i < pd->pipeline_len; ++i) {
-
 			pd->pipe[i].proc(&pd->pipe[i].buf, in, pd->pipe[i].ctx);
 			in = &pd->pipe[i].buf;
 		}
