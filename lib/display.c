@@ -304,6 +304,7 @@ plot_print_canvas(struct plot *plot, struct buf *buf)
 
 			if (color) {
 				bufputs(buf, "\033[0m");
+				have_last_color = false;
 			}
 
 			bufprintf(buf, y_fmt_r, label_num);
