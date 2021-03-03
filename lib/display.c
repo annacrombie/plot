@@ -173,9 +173,9 @@ next_piece(long y, long cur, long next)
 static void
 plot_fill_canvas(struct plot *plot)
 {
-	size_t i, x, y;
+	size_t i, x;
 	double ratio, *data;
-	uint32_t cur, nxt, e;
+	int32_t cur, nxt, e, y;
 	enum plot_piece next_p;
 
 	memset(plot->canvas, 0, plot->height * plot->width);
@@ -204,6 +204,16 @@ plot_fill_canvas(struct plot *plot)
 			} else {
 				y = cur;
 				e = nxt;
+			}
+
+			if (e < 0) {
+				continue;
+			} else if ((uint32_t)e >= plot->height) {
+				e = plot->height - 1;
+			}
+
+			if (y < 0) {
+				y = 0;
 			}
 
 			for (; y <= e; y++) {
