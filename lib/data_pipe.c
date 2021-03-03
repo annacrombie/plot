@@ -58,27 +58,16 @@ pipeline_exec(double *out, uint32_t *out_len, uint32_t out_cap, uint32_t max_new
 		in = &pd->in.out;
 
 		if (!(pd->in.out.len = pd->in.read(pd->in.ctx, pd->in.out.dat, PLOT_DBUF_SIZE))) {
-			/* L("no input"); */
+			/* no input */
 			return false;
 		}
 
 		for (i = 0; i < pd->pipeline_len; ++i) {
-			/* L("data[%d] <<< %d:%d", i, in->i, in->len); */
-			/* for (uint32_t j = in->i; j < in->len; ++j) { */
-			/* 	fprintf(stderr, "%f, ", in->dat[j]); */
-			/* } */
-			/* fprintf(stderr, "\n"); */
 
 			pd->pipe[i].proc(&pd->pipe[i].buf, in, pd->pipe[i].ctx);
 			in = &pd->pipe[i].buf;
 		}
 	}
-
-	/* L("out <<< %d:%d", in->i, in->len); */
-	/* for (uint32_t j = in->i; j < in->len; ++j) { */
-	/* 	fprintf(stderr, "%f, ", in->dat[j]); */
-	/* } */
-	/* fprintf(stderr, "\n"); */
 
 	new = in->len - in->i;
 	if (max_new && new > max_new) {
