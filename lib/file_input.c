@@ -62,14 +62,7 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 		return 0;
 	}
 
-	if (in->rem > (in->buf_max - 1)) {
-		// grow the buffer if the number of digits remaining is bigger
-		// than the buffer This should only happen with really tiny
-		// values of buf_size, so maybe when the animation related
-		// functions are updated, this can be removed
-		/* buf_size += in->rem; */
-		assert(false);
-	}
+	assert(in->rem <= (in->buf_max - 1));
 
 	if (!(buflen = fread(&in->buf[in->rem], 1, (in->buf_max - 1) - in->rem, in->src))) {
 		if (errno == EAGAIN || !errno) {
