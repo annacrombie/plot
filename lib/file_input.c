@@ -90,14 +90,12 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 
 		oldi = i;
 
-		/* L("i :%d, pos: %ld, %f, '%d', %ld", out_len, i, tmp, *endptr, endptr - &in->buf[i]); */
+		i += endptr - &in->buf[i];
 
 		out[out_len] = tmp;
 		if (++out_len >= out_max) {
 			break;
 		}
-
-		i += endptr - &in->buf[i];
 	}
 
 	if (i == buflen && !feof(in->src)) {
