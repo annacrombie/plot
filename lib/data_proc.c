@@ -102,13 +102,15 @@ sma_init(void *proc_ctx, void *opts, uint32_t opts_size)
 	return true;
 }
 
+struct cma_proc_ctx {
+	double cma;
+	double n;
+};
+
 static void
 cma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
-	struct {
-		double cma;
-		double n;
-	} *ctx = _ctx;
+	struct cma_proc_ctx *ctx = _ctx;
 
 	for (; in->i < in->len; ++in->i) {
 		ctx->cma =
@@ -123,14 +125,26 @@ cma_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 	}
 }
 
+static bool
+cma_init(void *proc_ctx, void *opts, uint32_t opts_size)
+{
+	struct cma_proc_ctx *ctx = proc_ctx;
+
+	*ctx = (struct cma_proc_ctx){ 0 };
+
+	return true;
+}
+
+struct roc_proc_ctx {
+	float t;
+	double old;
+	bool init;
+};
+
 static void
 roc_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 {
-	struct {
-		float t;
-		double old;
-		bool init;
-	} *ctx = _ctx;
+	struct roc_proc_ctx *ctx = _ctx;
 
 	if (!ctx->init && in->i < in->len) {
 		ctx->old = in->dat[in->i];
@@ -150,18 +164,22 @@ roc_proc(struct plot_dbuf *out, struct plot_dbuf *in, void *_ctx)
 static bool
 roc_init(void *proc_ctx, void *opts, uint32_t opts_size)
 {
+	struct roc_proc_ctx *ctx = proc_ctx;
+	float *f = opts;
+
 	assert(opts_size == sizeof(float));
-	if (*(float *)opts == 0.0f) {
+	if (*f == 0.0f) {
 		fprintf(stderr, "argument cannot be 0\n");
 		return false;
-	} else {
-		return true;
 	}
+
+	ctx->t = *f;
+	return true;
 }
 
 const struct dproc_registry_elem dproc_registry[data_proc_type_count] = {
 	[data_proc_avg] = { avg_proc, avg_init },
 	[data_proc_sma] = { sma_proc, sma_init },
-	[data_proc_cma] = { cma_proc },
+	[data_proc_cma] = { cma_proc, cma_init },
 	[data_proc_roc] = { roc_proc, roc_init },
 };
