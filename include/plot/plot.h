@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
+#include <stdio.h> // for FILE *
 
 #define PLOT_DBUF_SIZE 128
 #define PLOT_PIPELINE_CTX_SIZE 32
