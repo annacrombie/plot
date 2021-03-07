@@ -73,9 +73,11 @@ animate_plot(struct plot *p, char *buf, uint32_t bufsize, long ms,
 		}
 
 		plot_string(p, buf, bufsize);
-		fputs(buf, stdout);
-		do_esc(esc_curs_up, height);
-		fflush(stdout);
+		if (*buf) {
+			fputs(buf, stdout);
+			do_esc(esc_curs_up, height);
+			fflush(stdout);
+		}
 
 		nanosleep(&sleep, NULL);
 	}
