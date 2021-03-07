@@ -363,7 +363,9 @@ add_input(char *path, struct plot *p, enum plot_color c)
 	if (!plot_file_input_init(&file_input_ctxs[p->datasets],
 		file_input_bufs[p->datasets], FILE_INPUT_BUF, f, flags)) {
 		exit(EXIT_FAILURE);
-	} else if (!plot_add_dataset(p, c, &pipeline_elems[p->datasets], MAX_PIPELINE_ELEMENTS,
+	} else if (!plot_add_dataset(p, c,
+		&pipeline_elems[p->datasets * MAX_PIPELINE_ELEMENTS],
+		MAX_PIPELINE_ELEMENTS,
 		(plot_input_func)plot_file_input_read,
 		&file_input_ctxs[p->datasets])) {
 		exit(EXIT_FAILURE);
