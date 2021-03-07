@@ -13,7 +13,7 @@
 #include "cli/opts.h"
 
 static struct plot_file_input file_input_ctxs[MAX_DATASETS] = { 0 };
-#define FILE_INPUT_BUF 1024
+#define FILE_INPUT_BUF 16384
 static char file_input_bufs[MAX_DATASETS][FILE_INPUT_BUF] = { 0 };
 #define MAX_PIPELINE_ELEMENTS 32
 static struct plot_pipeline_elem pipeline_elems[MAX_DATASETS * MAX_PIPELINE_ELEMENTS];
