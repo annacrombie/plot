@@ -185,12 +185,12 @@ set_auto_bounds(struct plot *p)
 static bool
 plot_prepare(struct plot *plot)
 {
-	size_t i;
-	int no_data = 1;
+	uint32_t i;
+	bool no_data = true;
 
 	for (i = 0; i < plot->datasets; i++) {
 		if (plot->data[i].len > 0) {
-			no_data = 0;
+			no_data = false;
 			break;
 		}
 	}
