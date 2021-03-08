@@ -473,6 +473,10 @@ parse_opts(struct opts *opts, struct plot *p, struct plot_static_memory *mem,
 		}
 	}
 
+	if (optind < argc) {
+		fprintf(stderr, "warning: ignoring trailing arguments\n");
+	}
+
 	if (p->datasets == 0) {
 		add_input("-", p, mem, lc);
 	}
