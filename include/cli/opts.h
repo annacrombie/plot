@@ -1,13 +1,7 @@
 #ifndef OPTS_H
 #define OPTS_H
 
-#include <stdint.h>
-
-#define MAX_DATASETS 32
-#define MAX_WIDTH 512
-#define MAX_HEIGHT 512
-
-struct plot;
+#include "cli/main.h"
 
 enum mode {
 	mode_normal,
@@ -20,5 +14,6 @@ struct opts {
 	uint32_t follow_rate;
 };
 
-void parse_opts(struct opts *opts, struct plot *p, int argc, char **argv);
+void parse_opts(struct opts *opts, struct plot *p,
+	struct plot_static_memory *mem, int argc, char **argv);
 #endif
