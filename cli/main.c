@@ -1,9 +1,9 @@
 #include "posix.h"
 
-#include <plot/plot.h>
 #include <stdio.h>
 
 #include "cli/animate.h"
+#include "cli/main.h"
 #include "cli/opts.h"
 
 bool
@@ -20,34 +20,29 @@ follow_cb(struct plot *p)
 	return true;
 }
 
-#define BUFSIZE (MAX_WIDTH * MAX_HEIGHT)
-
 int
 main(int argc, char **argv)
 {
-	struct plot p = { 0 };
-	static uint8_t canvas[MAX_WIDTH * MAX_HEIGHT];
-	static double data_buf[MAX_WIDTH * MAX_HEIGHT];
-	static struct plot_data pd[MAX_DATASETS];
-	static char buf[MAX_WIDTH * MAX_HEIGHT];
-
-	plot_init(&p, canvas, data_buf, pd, 24, 80, MAX_DATASETS);
-
+	static struct plot_static_memory mem = { 0 };
 	struct opts opts = { 0 };
-	parse_opts(&opts, &p, argc, argv);
+	struct plot *p = &mem.plot;
+
+	plot_init(p, mem.canvas, mem.data_buf, mem.pd, 24, 80, MAX_DATASETS);
+
+	parse_opts(&opts, p, &mem, argc, argv);
 
 	switch (opts.mode) {
 	case mode_normal:
-		plot_fetch_until_full(&p);
-		plot_string(&p, buf, BUFSIZE);
-		fputs(buf, stdout);
+		plot_fetch_until_full(p);
+		plot_string(p, mem.out_buf, OUT_BUF);
+		fputs(mem.out_buf, stdout);
 		fflush(stdout);
 		break;
 	case mode_animate:
-		animate_plot(&p, buf, BUFSIZE, opts.follow_rate, animate_cb);
+		animate_plot(p, mem.out_buf, OUT_BUF, opts.follow_rate, animate_cb);
 		break;
 	case mode_follow:
-		animate_plot(&p, buf, BUFSIZE, opts.follow_rate, follow_cb);
+		animate_plot(p, mem.out_buf, OUT_BUF, opts.follow_rate, follow_cb);
 		break;
 	}
 }

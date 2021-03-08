@@ -3,23 +3,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <plot/file_input.h>
-#include <plot/plot.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "cli/main.h"
 #include "cli/opts.h"
-
-static struct plot_file_input file_input_ctxs[MAX_DATASETS] = { 0 };
-#define FILE_INPUT_BUF 16384
-static char file_input_bufs[MAX_DATASETS][FILE_INPUT_BUF] = { 0 };
-#define MAX_PIPELINE_ELEMENTS 32
-static struct plot_pipeline_elem pipeline_elems[MAX_DATASETS * MAX_PIPELINE_ELEMENTS];
-
-struct plot_pipeline_elem default_pipeline[MAX_PIPELINE_ELEMENTS];
-struct plot_data default_dataset;
 
 static void
 print_usage(FILE *f)
@@ -314,7 +304,7 @@ err:
 }
 
 static struct plot_data *
-add_input(char *path, struct plot *p, enum plot_color c)
+add_input(char *path, struct plot *p, struct plot_static_memory *mem, enum plot_color c)
 {
 	char *s;
 	uint8_t flags = 0;
@@ -360,22 +350,22 @@ add_input(char *path, struct plot *p, enum plot_color c)
 		fcntl(fd, F_SETFL, oldflags | O_NONBLOCK);
 	}
 
-	if (!plot_file_input_init(&file_input_ctxs[p->datasets],
-		file_input_bufs[p->datasets], FILE_INPUT_BUF, f, flags)) {
+	if (!plot_file_input_init(&mem->file_input_ctxs[p->datasets],
+		mem->file_input_bufs[p->datasets], FILE_INPUT_BUF, f, flags)) {
 		exit(EXIT_FAILURE);
 	} else if (!plot_add_dataset(p, c,
-		&pipeline_elems[p->datasets * MAX_PIPELINE_ELEMENTS],
+		&mem->pipeline_elems[p->datasets * MAX_PIPELINE_ELEMENTS],
 		MAX_PIPELINE_ELEMENTS,
 		(plot_input_func)plot_file_input_read,
-		&file_input_ctxs[p->datasets])) {
+		&mem->file_input_ctxs[p->datasets])) {
 		exit(EXIT_FAILURE);
 	}
 
 	pd = &p->data[p->datasets - 1];
 
-	memcpy(pd->pipe, default_pipeline,
-		sizeof(struct plot_pipeline_elem) * default_dataset.pipeline_len);
-	pd->pipeline_len = default_dataset.pipeline_len;
+	memcpy(pd->pipe, mem->default_pipeline,
+		sizeof(struct plot_pipeline_elem) * mem->default_dataset.pipeline_len);
+	pd->pipeline_len = mem->default_dataset.pipeline_len;
 
 	return pd;
 }
@@ -402,7 +392,8 @@ set_charset(struct plot *p, char *charset)
 }
 
 void
-parse_opts(struct opts *opts, struct plot *p, int argc, char **argv)
+parse_opts(struct opts *opts, struct plot *p, struct plot_static_memory *mem,
+	int argc, char **argv)
 {
 	char opt;
 	enum plot_color lc = 0;
@@ -415,8 +406,8 @@ parse_opts(struct opts *opts, struct plot *p, int argc, char **argv)
 		.follow_rate = 100,
 	};
 
-	struct plot_data *pd = &default_dataset;
-	plot_dataset_init(pd, 0, default_pipeline, MAX_PIPELINE_ELEMENTS, NULL, NULL);
+	struct plot_data *pd = &mem->default_dataset;
+	plot_dataset_init(pd, 0, mem->default_pipeline, MAX_PIPELINE_ELEMENTS, NULL, NULL);
 
 	while ((opt = getopt(argc, argv, "a:Ab:c:d:fhi:mp:s:S:x:y:")) != -1) {
 		switch (opt) {
@@ -449,7 +440,7 @@ parse_opts(struct opts *opts, struct plot *p, int argc, char **argv)
 			opts->mode = mode_follow;
 			break;
 		case 'i':
-			pd = add_input(optarg, p, lc);
+			pd = add_input(optarg, p, mem, lc);
 			lc = 0;
 			break;
 		case 'm':
@@ -483,10 +474,10 @@ parse_opts(struct opts *opts, struct plot *p, int argc, char **argv)
 	}
 
 	if (p->datasets == 0) {
-		add_input("-", p, lc);
+		add_input("-", p, mem, lc);
 	}
 
 	for (i = 0; i < p->datasets; ++i) {
-		file_input_ctxs[i].flags |= global_flags;
+		mem->file_input_ctxs[i].flags |= global_flags;
 	}
 }
