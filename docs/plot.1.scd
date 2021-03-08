@@ -179,18 +179,21 @@ plot reads sequences of numbers and outputs a line graph.
 
 # EXAMPLE
 
-With a little shell scripting, you can use plot to monitor system information
+Monitor network usage on linux:
 
 ```
-@0@
+card=wlan0
+plot -f -p "avg:5|roc:5" \
+    -c l -i "/sys/class/net/$card/statistics/rx_packets:r" \
+    -c r -i "/sys/class/net/$card/statistics/tx_packets:r"
 ```
 
-Then, to e.g. monitor network usage
-
-```
-monitor.sh r /sys/class/net/wlan0/statistics/rx_packets \
-	   l /sys/class/net/wlan0/statistics/tx_packets
-```
+First, use the `-f` flag to tell plot to continue to read the file.  Next,
+setup a default pipeline which first averages every 5 inputs together (to
+smooth out noise) and then computes the rate of change.  Next we add two
+inputs, with their color set to blue and red respectively.  We also use the
+rewind (`:r`) flag for both files, to convert a file containing a single number
+into a stream of numbers by re-reading it over and over from the beginning.
 
 # AUTHORS
 
