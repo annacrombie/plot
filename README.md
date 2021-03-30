@@ -1,36 +1,43 @@
 # Plot
 
-Generate a simple ascii plot
+plot on the command line
 
 ```
-$ { seq 1 5; seq 1 4 | tac; } | plot -d5
-       5.00 ┤   ╭╮
-       4.00 ┤  ╭╯╰╮
-       3.00 ┤ ╭╯  ╰╮
-       2.00 ┤╭╯    ╰╮
-       1.00 ┼╯      ╰─
-$
+$ seq 1 5 | plot -d5
+       5.00 ┤   ╭─
+       4.00 ┤  ╭╯
+       3.00 ┤ ╭╯
+       2.00 ┤╭╯
+       1.00 ┼╯
 ```
 
-# Building
+Monitor linux network usage:
 
-Dependencies:
+```
+card=wlan0
+plot -d10 -f -p "avg:5|roc:5" \
+    -c l -i "/sys/class/net/$card/statistics/rx_packets:r" \
+    -c r -i "/sys/class/net/$card/statistics/tx_packets:r"
+```
 
-+ meson >= 0.44.1
-+ c99 compiler
+![output of the above command](https://mochiro.moe/d/plot_netmon.gif)
+
+## Building
+
+compile:
 
 ```
 $ meson build
-$ ninja -C build
+$ meson compile -C build
 ```
 
-# Installing
+install:
 
 ```
-$ ninja -C build install
+$ meson install -C build
 ```
 
-# Testing
+## Testing
 
 ```
 $ meson test -C build
@@ -42,10 +49,12 @@ or, if you want to watch the tests,
 $ meson test -C build -v --num-processes 1
 ```
 
-# Usage
+## Usage
 
-See `plot -h`
+For the cli, see `plot -h` or `man plot`.
 
-# Credits
+See `include/plot/plot.h` for library documentation.  Real documentation is a TODO.
+
+## Credits
 
 Inspired by [asciichart](https://github.com/kroitor/asciichart)
