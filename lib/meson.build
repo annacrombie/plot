@@ -14,7 +14,7 @@ src = files([
 
 libplot = library(
 	'plot',
-	sources: src,
+	src,
 	dependencies: [libm],
 	include_directories: include,
 	install: true

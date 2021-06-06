@@ -6,7 +6,7 @@ src = files([
 
 plot = executable(
 	'plot',
-	sources: src,
+	src,
 	dependencies: [libm],
 	link_with: [libplot],
 	include_directories: include,
