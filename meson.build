@@ -10,7 +10,6 @@ project(
 	],
 )
 
-
 cc = meson.get_compiler('c')
 
 add_project_arguments(cc.get_supported_arguments([
@@ -44,7 +43,6 @@ version_info.set('version', meson.project_version())
 version_info.set('vcs_tag', git_sha)
 
 libm = cc.find_library('m', required: true)
-install_headers()
 
 subdir('include')
 subdir('lib')
