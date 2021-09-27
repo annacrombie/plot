@@ -43,35 +43,13 @@ start_of_number(char c)
 	}
 }
 
-uint32_t
-plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
+static uint32_t
+plot_file_input_parse_buffer(struct plot_file_input *in, size_t buflen, double *out, uint32_t out_max)
 {
 	char *endptr = NULL;
-	size_t i = 0, buflen, oldi = 0;
 	double tmp;
+	size_t i = 0, oldi = 0;
 	uint32_t out_len = 0;
-
-	if (feof(in->src)) {
-		if (in->flags & plot_file_input_flag_infinite) {
-			clearerr(in->src);
-			if (in->flags & plot_file_input_flag_rewind) {
-				rewind(in->src);
-			}
-		}
-
-		return 0;
-	}
-
-	assert(in->rem <= (in->buf_max - 1));
-
-	if (!(buflen = fread(&in->buf[in->rem], 1, (in->buf_max - 1) - in->rem, in->src))) {
-		if (errno == EAGAIN || !errno) {
-			return 0;
-		} else {
-			fprintf(stderr, "error reading from file %d: %s\n", errno, strerror(errno));
-			return 0;
-		}
-	}
 
 	buflen += in->rem;
 
@@ -114,4 +92,35 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 	memset(&in->buf[in->rem], 0, (in->buf_max - 1) - in->rem);
 
 	return out_len;
+}
+
+uint32_t
+plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
+{
+	if (feof(in->src)) {
+		if (in->flags & plot_file_input_flag_infinite) {
+			clearerr(in->src);
+			if (in->flags & plot_file_input_flag_rewind) {
+				rewind(in->src);
+			}
+		} else if (in->rem) {
+			return plot_file_input_parse_buffer(in, 0, out, out_max);
+		}
+
+		return 0;
+	}
+
+	assert(in->rem <= (in->buf_max - 1));
+
+	size_t buflen;
+	if (!(buflen = fread(&in->buf[in->rem], 1, (in->buf_max - 1) - in->rem, in->src))) {
+		if (errno == EAGAIN || !errno) {
+			return 0;
+		} else {
+			fprintf(stderr, "error reading from file %d: %s\n", errno, strerror(errno));
+			return 0;
+		}
+	}
+
+	return plot_file_input_parse_buffer(in, buflen, out, out_max);
 }
