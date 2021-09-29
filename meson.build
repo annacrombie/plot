@@ -1,7 +1,7 @@
 project(
 	'plot',
 	'c',
-	version: '0.5.0',
+	version: '0.5.1',
 	license: 'MIT',
 	meson_version: '>=0.44.1',
 	default_options: [
