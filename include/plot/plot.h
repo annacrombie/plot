@@ -1,6 +1,10 @@
 #ifndef PLOT_H
 #define PLOT_H
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h> // for FILE *
@@ -136,4 +140,9 @@ bool plot_fetch(struct plot *plot, uint32_t max_new);
 bool plot_fetch_until_full(struct plot *p);
 void plot_string(struct plot *plot, char *buf, uint32_t buflen);
 void plot_print(struct plot *plot, FILE *f);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
